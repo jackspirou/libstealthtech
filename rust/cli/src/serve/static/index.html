@@ -97,14 +97,36 @@
             </div>
         </section>
 
-        <!-- Couch Shape -->
-        <section class="card" id="shape-card">
-            <h2>Couch Shape</h2>
+        <!-- Input Source -->
+        <section class="card" id="input-card">
+            <h2>Input Source</h2>
             <div class="button-group">
-                <button class="btn btn-option" data-shape="straight">Straight</button>
-                <button class="btn btn-option" data-shape="lshape">L-Shape</button>
-                <button class="btn btn-option" data-shape="ushape">U-Shape</button>
-                <button class="btn btn-option" data-shape="pit">Pit</button>
+                <button class="btn btn-option" data-input="hdmi">HDMI</button>
+                <button class="btn btn-option" data-input="bluetooth">Bluetooth</button>
+                <button class="btn btn-option" data-input="aux">AUX</button>
+                <button class="btn btn-option" data-input="optical">Optical</button>
+            </div>
+        </section>
+
+        <!-- Media Controls (shown only for Bluetooth input) -->
+        <section class="card" id="media-card" style="display:none">
+            <h2>Media Controls</h2>
+            <div class="button-group media-controls">
+                <button class="btn btn-option" id="skip-back-btn" aria-label="Previous track">&#9198;</button>
+                <button class="btn btn-option" id="play-pause-btn" aria-label="Play/Pause">&#9199;</button>
+                <button class="btn btn-option" id="skip-fwd-btn" aria-label="Next track">&#9197;</button>
+            </div>
+        </section>
+
+        <!-- Sound Mode -->
+        <section class="card" id="mode-card">
+            <h2>Sound Mode</h2>
+            <div class="button-group">
+                <button class="btn btn-option" data-mode="movies" title="Enhanced surround and bass for movie soundtracks">Movies</button>
+                <button class="btn btn-option" data-mode="music" title="Balanced stereo optimized for music playback">Music</button>
+                <button class="btn btn-option" data-mode="tv" title="Balanced mode for TV shows and streaming">TV</button>
+                <button class="btn btn-option" data-mode="news" title="Enhanced dialog clarity for speech-heavy content">News</button>
+                <button class="btn btn-option" data-mode="manual" title="Uses your custom bass, treble, and balance settings">Manual</button>
             </div>
         </section>
 
@@ -154,36 +176,14 @@
             </div>
         </section>
 
-        <!-- Input Source -->
-        <section class="card" id="input-card">
-            <h2>Input Source</h2>
+        <!-- Couch Shape -->
+        <section class="card" id="shape-card">
+            <h2>Couch Shape</h2>
             <div class="button-group">
-                <button class="btn btn-option" data-input="hdmi">HDMI</button>
-                <button class="btn btn-option" data-input="bluetooth">Bluetooth</button>
-                <button class="btn btn-option" data-input="aux">AUX</button>
-                <button class="btn btn-option" data-input="optical">Optical</button>
-            </div>
-        </section>
-
-        <!-- Media Controls (shown only for Bluetooth input) -->
-        <section class="card" id="media-card" style="display:none">
-            <h2>Media Controls</h2>
-            <div class="button-group media-controls">
-                <button class="btn btn-option" id="skip-back-btn" aria-label="Previous track">&#9198;</button>
-                <button class="btn btn-option" id="play-pause-btn" aria-label="Play/Pause">&#9199;</button>
-                <button class="btn btn-option" id="skip-fwd-btn" aria-label="Next track">&#9197;</button>
-            </div>
-        </section>
-
-        <!-- Sound Mode -->
-        <section class="card" id="mode-card">
-            <h2>Sound Mode</h2>
-            <div class="button-group">
-                <button class="btn btn-option" data-mode="movies" title="Enhanced surround and bass for movie soundtracks">Movies</button>
-                <button class="btn btn-option" data-mode="music" title="Balanced stereo optimized for music playback">Music</button>
-                <button class="btn btn-option" data-mode="tv" title="Balanced mode for TV shows and streaming">TV</button>
-                <button class="btn btn-option" data-mode="news" title="Enhanced dialog clarity for speech-heavy content">News</button>
-                <button class="btn btn-option" data-mode="manual" title="Uses your custom bass, treble, and balance settings">Manual</button>
+                <button class="btn btn-option" data-shape="straight">Straight</button>
+                <button class="btn btn-option" data-shape="lshape">L-Shape</button>
+                <button class="btn btn-option" data-shape="ushape">U-Shape</button>
+                <button class="btn btn-option" data-shape="pit">Pit</button>
             </div>
         </section>
 
