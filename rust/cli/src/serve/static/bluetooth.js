@@ -21,6 +21,7 @@ const $ = ST.$;
 
 const connectBtn = $("#connect-btn");
 const reconnectBtn = $("#reconnect-btn");
+const dividerOr = $("#divider-or");
 const btDisconnectBtn = $("#bt-disconnect-btn");
 const compatBanner = $("#compat-banner");
 const connectionPanel = $("#connection-panel");
@@ -54,6 +55,7 @@ function checkBrowserCompat() {
 
     connectBtn.disabled = true;
     reconnectBtn.style.display = "none";
+    dividerOr.style.display = "none";
 
     var msg = "<p><strong>Web Bluetooth is not available</strong> in this browser.</p>";
 
@@ -100,8 +102,8 @@ async function checkPreviousDevices() {
             bleDevice = prev;
             bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
             reconnectBtn.style.display = "";
+            dividerOr.style.display = "";
             reconnectBtn.textContent = "Reconnect to " + prev.name;
-            connectBtn.textContent = "Scan for Devices";
         }
     } catch (e) {
         // getDevices() not supported or no permissions -- ignore
@@ -231,7 +233,7 @@ async function reconnect() {
         statusText.textContent = "Disconnected";
         setCardDisconnected();
         reconnectBtn.style.display = "";
-        connectBtn.textContent = "Scan for Devices";
+        dividerOr.style.display = "";
     }
 }
 
@@ -240,8 +242,8 @@ function onConnected() {
 
     // Prepare controls for next disconnect (reconnect available)
     reconnectBtn.style.display = "";
+    dividerOr.style.display = "";
     reconnectBtn.textContent = "Reconnect to " + (bleDevice.name || "device");
-    connectBtn.textContent = "Scan for Devices";
 
     ST.updateUI({ connected: true, name: bleDevice.name || null });
     ST.addLogEntry("Connected to " + (bleDevice.name || "device"));

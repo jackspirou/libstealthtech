@@ -389,9 +389,49 @@ main {
 
 .connection-controls {
     display: flex;
-    justify-content: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
     margin-bottom: 12px;
+}
+
+.connection-controls .btn {
+    width: 100%;
+    max-width: 320px;
+}
+
+.divider-or {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+    margin: 12px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: lowercase;
+}
+
+.divider-or::before,
+.divider-or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.divider-or span {
+    padding: 0 12px;
+}
+
+.btn-secondary {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
 }
 
 .device-list {
@@ -842,10 +882,6 @@ input[type="range"]::-moz-range-track {
     .slider-row label {
         min-width: 55px;
         font-size: 0.82rem;
-    }
-
-    .connection-controls {
-        flex-direction: column;
     }
 
     .status-text {
