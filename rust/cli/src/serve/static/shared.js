@@ -121,6 +121,40 @@
 
     // ---------- Notification log ----------
 
+    var fwTypeNames = { 1: "MCU", 2: "DSP", 3: "EQ" };
+
+    var logFormatters = {
+        Volume:             function (v) { return "Volume: " + v + "/36"; },
+        CenterVolume:       function (v) { return "Center: " + v + "/30"; },
+        Treble:             function (v) { return "Treble: " + v + "/20"; },
+        Bass:               function (v) { return "Bass: " + v + "/20"; },
+        MuteState:          function (v) { return "Mute: " + (v ? "on" : "off"); },
+        QuietMode:          function (v) { return "Quiet Mode: " + (v ? "on" : "off"); },
+        Balance:            function (v) { return "Balance: " + v + "/100"; },
+        Layout:             function (v) { return "Layout: " + v; },
+        CurrentInput:       function (v) { return "Input: " + v; },
+        Power:              function (v) { return "Power: " + (v ? "on" : "standby"); },
+        CurrentSoundMode:   function (v) { return "Sound Mode: " + v; },
+        Covering:           function (v) { return "Covering: " + v; },
+        ArmType:            function (v) { return "Arm Type: " + v; },
+        SubwooferConnected: function (v) { return "Subwoofer: " + (v ? "connected" : "disconnected"); },
+        RearVolume:         function (v) { return "Rear: " + v + "/30"; },
+        FirmwareVersion:    function (v) {
+            var name = fwTypeNames[v.fw_type] || "Type " + v.fw_type;
+            return "Firmware " + name + ": v" + v.major + "." + v.minor;
+        },
+    };
+
+    function formatLogMessage(message) {
+        var parsed;
+        try { parsed = JSON.parse(message); } catch (e) { return message; }
+        if (typeof parsed !== "object" || parsed === null) return message;
+        var keys = Object.keys(parsed);
+        if (keys.length !== 1) return message;
+        var fmt = logFormatters[keys[0]];
+        return fmt ? fmt(parsed[keys[0]]) : message;
+    }
+
     function addLogEntry(message) {
         if (logEmpty) {
             logEmpty.style.display = "none";
@@ -130,10 +164,10 @@
         entry.className = "log-entry";
 
         var now = new Date();
-        var time = now.toLocaleTimeString("en-US", { hour12: false }) +
+        var time = now.toLocaleTimeString("en-US", { hour12: true }) +
             "." + String(now.getMilliseconds()).padStart(3, "0");
 
-        entry.innerHTML = '<span class="log-time">' + time + '</span><span class="log-message">' + escapeHtml(message) + '</span>';
+        entry.innerHTML = '<span class="log-time">' + time + '</span><span class="log-message">' + escapeHtml(formatLogMessage(message)) + '</span>';
 
         logContainer.appendChild(entry);
         logContainer.scrollTop = logContainer.scrollHeight;
