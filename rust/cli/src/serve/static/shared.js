@@ -337,9 +337,11 @@
                 if (connectingIndicator) connectingIndicator.style.display = "none";
                 if (connectionControls) connectionControls.style.display = "";
 
-                // Clear firmware text
+                // Clear firmware text and hide update banner
                 var connFwText = $("#connected-firmware-text");
                 if (connFwText) connFwText.textContent = "";
+                var fwBanner = $("#firmware-update-banner");
+                if (fwBanner) fwBanner.style.display = "none";
             }
         }
 
