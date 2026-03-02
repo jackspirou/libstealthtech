@@ -769,3 +769,229 @@ input[type="range"]::-moz-range-track {
         min-width: auto;
     }
 }
+
+/* ---------- Documentation Pages ---------- */
+
+.header-home {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.header-home:hover {
+    color: var(--accent);
+}
+
+.docs-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    transition: all var(--transition);
+}
+
+.docs-link:hover {
+    background: var(--border);
+    color: var(--text-primary);
+}
+
+.doc-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 24px 60px;
+}
+
+.doc-content article {
+    line-height: 1.7;
+}
+
+.doc-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+}
+
+.doc-content h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-top: 2.5em;
+    margin-bottom: 0.75em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.doc-content h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+}
+
+.doc-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.doc-content p {
+    margin-bottom: 1em;
+}
+
+.doc-content a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.doc-content a:hover {
+    text-decoration: underline;
+}
+
+.doc-content ul, .doc-content ol {
+    margin-bottom: 1em;
+    padding-left: 1.5em;
+}
+
+.doc-content li {
+    margin-bottom: 0.3em;
+}
+
+.doc-content code {
+    font-family: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--bg-input);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+.doc-content pre {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    overflow-x: auto;
+    margin-bottom: 1em;
+    line-height: 1.5;
+}
+
+.doc-content pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+.doc-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+    font-size: 0.9rem;
+    display: block;
+    overflow-x: auto;
+}
+
+.doc-content th {
+    text-align: left;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+    background: var(--bg-input);
+}
+
+.doc-content td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.doc-content tr:hover td {
+    background: var(--bg-input);
+}
+
+.doc-content blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 16px;
+    margin: 1em 0;
+    color: var(--text-secondary);
+}
+
+.doc-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2em 0;
+}
+
+/* Documentation index page */
+.doc-index {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.doc-index-card {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow);
+    transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.doc-index-card:hover {
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.doc-index-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+
+.doc-index-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+    .doc-content {
+        padding: 16px 12px 40px;
+    }
+
+    .doc-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .doc-content h2 {
+        font-size: 1.2rem;
+    }
+
+    .doc-content pre {
+        font-size: 0.78rem;
+    }
+
+    .doc-content table {
+        font-size: 0.8rem;
+    }
+
+    .doc-content th, .doc-content td {
+        padding: 6px 8px;
+    }
+}

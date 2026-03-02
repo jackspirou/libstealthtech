@@ -27,6 +27,7 @@ axum.workspace = true
 tower-http.workspace = true
 rust-embed.workspace = true
 mime_guess.workspace = true
+pulldown-cmark.workspace = true
 serde.workspace = true
 
 [[bin]]

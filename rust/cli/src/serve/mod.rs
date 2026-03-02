@@ -4,6 +4,7 @@
 //! real-time BLE notification streaming, and an embedded SPA web UI.
 
 mod api;
+mod docs;
 mod embed;
 mod state;
 mod ws;
@@ -80,6 +81,22 @@ pub fn export(output: &Path) -> anyhow::Result<()> {
             }
         }
     }
+
+    // Generate documentation pages from embedded Markdown
+    let docs_dir = output.join("docs");
+    std::fs::create_dir_all(&docs_dir)?;
+
+    for (filename, content) in docs::render_all() {
+        std::fs::write(docs_dir.join(&filename), content)?;
+        println!("  docs/{}", filename);
+    }
+
+    std::fs::write(docs_dir.join("index.html"), docs::render_index())?;
+    println!("  docs/index.html");
+
+    // Overwrite sitemap with version that includes doc pages
+    std::fs::write(output.join("sitemap.xml"), docs::generate_sitemap())?;
+    println!("  sitemap.xml (updated with docs)");
 
     println!("\nExported to: {}", output.display());
     println!("Open index.html in Chrome to use Web Bluetooth mode.");
