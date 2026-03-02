@@ -169,9 +169,7 @@ fn parse_command(cmd_json: &str) -> Result<Command, JsError> {
         // Object variants: {"SetVolume": 18}, {"SetInput": "HdmiArc"}, etc.
         Value::Object(map) => {
             if map.len() != 1 {
-                return Err(JsError::new(
-                    "command object must have exactly one key",
-                ));
+                return Err(JsError::new("command object must have exactly one key"));
             }
             let (key, val) = map.iter().next().unwrap();
             match key.as_str() {
@@ -247,9 +245,7 @@ fn parse_command(cmd_json: &str) -> Result<Command, JsError> {
             }
         }
 
-        _ => Err(JsError::new(
-            "command must be a JSON string or object",
-        )),
+        _ => Err(JsError::new("command must be a JSON string or object")),
     }
 }
 
@@ -336,8 +332,8 @@ fn val_to_config_shape(val: &Value) -> Result<ConfigShape, JsError> {
 /// ```
 #[wasm_bindgen]
 pub fn decode_response(uuid_str: &str, data: &[u8]) -> Result<String, JsError> {
-    let uuid = uuid::Uuid::parse_str(uuid_str)
-        .map_err(|e| JsError::new(&format!("invalid UUID: {e}")))?;
+    let uuid =
+        uuid::Uuid::parse_str(uuid_str).map_err(|e| JsError::new(&format!("invalid UUID: {e}")))?;
 
     let response = Response::decode(uuid, data);
     let json = response_to_json(&response);
@@ -530,8 +526,7 @@ impl WasmDeviceState {
                             3 => "EQ",
                             _ => "Unknown",
                         };
-                        self.inner.firmware_version =
-                            Some(format!("{type_name} v{major}.{minor}"));
+                        self.inner.firmware_version = Some(format!("{type_name} v{major}.{minor}"));
                     }
                 }
                 // Unknown responses are silently ignored
@@ -664,22 +659,25 @@ impl WasmDeviceState {
             return None;
         }
 
-        let component = |current: Option<libstealthtech_protocol::characteristics::FirmwareComponentVersion>,
-                         latest: &libstealthtech_protocol::characteristics::FirmwareComponentVersion|
-         -> Value {
-            match current {
-                Some(v) => json!({
-                    "current": format!("{v}"),
-                    "latest": format!("{latest}"),
-                    "up_to_date": v.is_at_least(latest),
-                }),
-                None => json!({
-                    "current": null,
-                    "latest": format!("{latest}"),
-                    "up_to_date": null,
-                }),
-            }
-        };
+        let component =
+            |current: Option<
+                libstealthtech_protocol::characteristics::FirmwareComponentVersion,
+            >,
+             latest: &libstealthtech_protocol::characteristics::FirmwareComponentVersion|
+             -> Value {
+                match current {
+                    Some(v) => json!({
+                        "current": format!("{v}"),
+                        "latest": format!("{latest}"),
+                        "up_to_date": v.is_at_least(latest),
+                    }),
+                    None => json!({
+                        "current": null,
+                        "latest": format!("{latest}"),
+                        "up_to_date": null,
+                    }),
+                }
+            };
 
         let status = json!({
             "mcu": component(self.inner.mcu_version, &LATEST_MCU_VERSION),
@@ -764,7 +762,7 @@ mod tests {
         let data = parsed["data"].as_array().unwrap();
         assert_eq!(data[0], 0xAA);
         assert_eq!(data[1], 0x07); // Source cmd_id
-        assert_eq!(data[2], 0);    // HdmiArc = 0
+        assert_eq!(data[2], 0); // HdmiArc = 0
     }
 
     #[test]
@@ -999,7 +997,9 @@ mod tests {
     #[test]
     fn device_state_apply_unknown_is_ignored() {
         let mut state = WasmDeviceState::new();
-        state.apply_response(r#"{"Unknown": {"uuid": "abc", "data": [1,2,3]}}"#).unwrap();
+        state
+            .apply_response(r#"{"Unknown": {"uuid": "abc", "data": [1,2,3]}}"#)
+            .unwrap();
         // No fields should be set
         assert_eq!(state.volume(), None);
     }

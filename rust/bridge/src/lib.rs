@@ -33,8 +33,7 @@ impl From<anyhow::Error> for StealthTechError {
     fn from(err: anyhow::Error) -> Self {
         let message = err.to_string();
         let lower = message.to_lowercase();
-        if lower.contains("connect") || lower.contains("reconnect") || lower.contains("timed out")
-        {
+        if lower.contains("connect") || lower.contains("reconnect") || lower.contains("timed out") {
             StealthTechError::Connection { message }
         } else if lower.contains("protocol")
             || lower.contains("encode")
@@ -310,12 +309,10 @@ impl StealthTechBleDevice {
 
     pub async fn set_rear_channel_volume(&self, level: u8) -> Result<(), StealthTechError> {
         let inner = self.inner.clone();
-        tokio::task::spawn(async move {
-            inner.lock().await.set_rear_channel_volume(level).await
-        })
-        .await
-        .map_err(join_err)?
-        .map_err(StealthTechError::from)
+        tokio::task::spawn(async move { inner.lock().await.set_rear_channel_volume(level).await })
+            .await
+            .map_err(join_err)?
+            .map_err(StealthTechError::from)
     }
 
     pub async fn set_balance(&self, balance: u8) -> Result<(), StealthTechError> {
@@ -353,12 +350,13 @@ pub struct BleScanner {
 impl BleScanner {
     #[uniffi::constructor]
     pub async fn new() -> Result<Arc<Self>, StealthTechError> {
-        let scanner = tokio::task::spawn(async move {
-            libstealthtech_core::ble::scanner::Scanner::new().await
-        })
-        .await
-        .map_err(join_err)?
-        .map_err(StealthTechError::from)?;
+        let scanner =
+            tokio::task::spawn(
+                async move { libstealthtech_core::ble::scanner::Scanner::new().await },
+            )
+            .await
+            .map_err(join_err)?
+            .map_err(StealthTechError::from)?;
 
         Ok(Arc::new(Self {
             inner: Arc::new(tokio::sync::Mutex::new(scanner)),

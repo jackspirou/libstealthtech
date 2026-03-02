@@ -11,10 +11,7 @@ use super::state::AppState;
 ///
 /// On connect, subscribes to the broadcast channel and forwards all
 /// BLE notifications as JSON messages to the WebSocket client.
-pub async fn handler(
-    ws: WebSocketUpgrade,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_socket(socket, state))
 }
 

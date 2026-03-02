@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use btleplug::api::{Characteristic, CharPropFlags};
+use btleplug::api::{CharPropFlags, Characteristic};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
@@ -47,7 +47,9 @@ fn known_characteristic_name(uuid: &str) -> Option<&'static str> {
         // Standard BLE services/characteristics
         "00002a00-0000-1000-8000-00805f9b34fb" => Some("Device Name"),
         "00002a01-0000-1000-8000-00805f9b34fb" => Some("Appearance"),
-        "00002a04-0000-1000-8000-00805f9b34fb" => Some("Peripheral Preferred Connection Parameters"),
+        "00002a04-0000-1000-8000-00805f9b34fb" => {
+            Some("Peripheral Preferred Connection Parameters")
+        }
         "00002a24-0000-1000-8000-00805f9b34fb" => Some("Model Number String"),
         "00002a25-0000-1000-8000-00805f9b34fb" => Some("Serial Number String"),
         "00002a26-0000-1000-8000-00805f9b34fb" => Some("Firmware Revision String"),
@@ -73,10 +75,7 @@ pub async fn discover_gatt_profile(
     info!("Starting GATT profile discovery...");
 
     let characteristics: BTreeSet<Characteristic> = connection.characteristics();
-    info!(
-        count = characteristics.len(),
-        "Found GATT characteristics"
-    );
+    info!(count = characteristics.len(), "Found GATT characteristics");
 
     // Group characteristics by service UUID
     let mut services_map: std::collections::BTreeMap<String, Vec<DiscoveredCharacteristic>> =
@@ -94,7 +93,10 @@ pub async fn discover_gatt_profile(
         if char.properties.contains(CharPropFlags::WRITE) {
             props.push("WRITE".to_string());
         }
-        if char.properties.contains(CharPropFlags::WRITE_WITHOUT_RESPONSE) {
+        if char
+            .properties
+            .contains(CharPropFlags::WRITE_WITHOUT_RESPONSE)
+        {
             props.push("WRITE_NO_RESP".to_string());
         }
         if char.properties.contains(CharPropFlags::NOTIFY) {
@@ -109,9 +111,10 @@ pub async fn discover_gatt_profile(
             match connection.read(char).await {
                 Ok(data) => {
                     let hex_str = hex::encode(&data);
-                    let utf8_str = String::from_utf8(data.clone())
-                        .ok()
-                        .filter(|s| s.chars().all(|c| c.is_ascii_graphic() || c.is_ascii_whitespace()));
+                    let utf8_str = String::from_utf8(data.clone()).ok().filter(|s| {
+                        s.chars()
+                            .all(|c| c.is_ascii_graphic() || c.is_ascii_whitespace())
+                    });
                     debug!(uuid = %uuid_str, hex = %hex_str, "Read characteristic");
                     (Some(hex_str), utf8_str)
                 }
@@ -186,8 +189,8 @@ pub fn print_gatt_profile(profile: &GattProfile) {
     println!();
 
     for service in &profile.services {
-        let service_label = known_characteristic_name(&service.uuid)
-            .unwrap_or("Unknown/Custom Service");
+        let service_label =
+            known_characteristic_name(&service.uuid).unwrap_or("Unknown/Custom Service");
         println!("┌─ Service: {} ─────────", service.uuid);
         println!("│  Type: {}", service_label);
         println!("│  Characteristics: {}", service.characteristics.len());
@@ -198,10 +201,11 @@ pub fn print_gatt_profile(profile: &GattProfile) {
             let prefix = if is_last { "└" } else { "├" };
             let cont = if is_last { " " } else { "│" };
 
-            let desc = char
-                .description
-                .as_deref()
-                .unwrap_or(if char.is_known { "Standard" } else { "⚠ UNKNOWN - needs mapping" });
+            let desc = char.description.as_deref().unwrap_or(if char.is_known {
+                "Standard"
+            } else {
+                "⚠ UNKNOWN - needs mapping"
+            });
 
             println!("{}── Characteristic: {}", prefix, char.uuid);
             println!("{}   Properties: [{}]", cont, char.properties.join(", "));

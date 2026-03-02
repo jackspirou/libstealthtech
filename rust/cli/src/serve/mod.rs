@@ -73,7 +73,10 @@ pub fn export(output: &Path) -> anyhow::Result<()> {
                 println!("  {}", file);
             }
             None => {
-                eprintln!("  warning: {} not found in embedded files (run `make wasm-embed` first)", file);
+                eprintln!(
+                    "  warning: {} not found in embedded files (run `make wasm-embed` first)",
+                    file
+                );
             }
         }
     }
@@ -82,4 +85,3 @@ pub fn export(output: &Path) -> anyhow::Result<()> {
     println!("Open index.html in Chrome to use Web Bluetooth mode.");
     Ok(())
 }
-

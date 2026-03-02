@@ -56,10 +56,7 @@ pub async fn static_handler(uri: axum::http::Uri) -> impl IntoResponse {
             // SPA fallback to index.html (unified single-page UI)
             match StaticFiles::get("index.html") {
                 Some(content) => (
-                    [(
-                        axum::http::header::CONTENT_TYPE,
-                        "text/html".to_string(),
-                    )],
+                    [(axum::http::header::CONTENT_TYPE, "text/html".to_string())],
                     content.data.into_owned(),
                 )
                     .into_response(),

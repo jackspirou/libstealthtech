@@ -70,7 +70,9 @@ impl StealthTechDevice {
     }
 
     /// Get the current connection state.
-    pub fn connection_state(&self) -> tokio::sync::watch::Receiver<crate::ble::connection::ConnectionState> {
+    pub fn connection_state(
+        &self,
+    ) -> tokio::sync::watch::Receiver<crate::ble::connection::ConnectionState> {
         self.connection.state()
     }
 
@@ -85,9 +87,7 @@ impl StealthTechDevice {
     }
 
     /// Discover and dump the full GATT profile (for reverse engineering).
-    pub async fn discover_gatt(
-        &mut self,
-    ) -> anyhow::Result<crate::ble::gatt::GattProfile> {
+    pub async fn discover_gatt(&mut self) -> anyhow::Result<crate::ble::gatt::GattProfile> {
         crate::ble::gatt::discover_gatt_profile(
             &mut self.connection,
             self.device_name.clone(),
@@ -162,7 +162,8 @@ impl StealthTechDevice {
 
     /// Set rear channel volume (0-30).
     pub async fn set_rear_channel_volume(&mut self, level: u8) -> anyhow::Result<()> {
-        self.send_command(Command::SetRearChannelVolume(level)).await?;
+        self.send_command(Command::SetRearChannelVolume(level))
+            .await?;
         self.state.rear_channel_volume = Some(level);
         Ok(())
     }
@@ -173,7 +174,8 @@ impl StealthTechDevice {
 
     /// Enable or disable surround speakers.
     pub async fn set_surround(&mut self, enabled: bool) -> anyhow::Result<()> {
-        self.send_command(Command::SetSurroundEnabled(enabled)).await?;
+        self.send_command(Command::SetSurroundEnabled(enabled))
+            .await?;
         self.state.surround_enabled = Some(enabled);
         Ok(())
     }
@@ -253,16 +255,13 @@ impl StealthTechDevice {
     pub async fn start_notifications(
         &mut self,
     ) -> anyhow::Result<
-        std::pin::Pin<
-            Box<dyn futures::Stream<Item = btleplug::api::ValueNotification> + Send>,
-        >,
+        std::pin::Pin<Box<dyn futures::Stream<Item = btleplug::api::ValueNotification> + Send>>,
     > {
         let chars = self.connection.characteristics();
         let notifiable: Vec<_> = chars
             .iter()
             .filter(|c| {
-                c.properties
-                    .contains(btleplug::api::CharPropFlags::NOTIFY)
+                c.properties.contains(btleplug::api::CharPropFlags::NOTIFY)
                     || c.properties
                         .contains(btleplug::api::CharPropFlags::INDICATE)
             })
@@ -293,8 +292,7 @@ impl StealthTechDevice {
         let notifiable: Vec<_> = chars
             .iter()
             .filter(|c| {
-                c.properties
-                    .contains(btleplug::api::CharPropFlags::NOTIFY)
+                c.properties.contains(btleplug::api::CharPropFlags::NOTIFY)
                     || c.properties
                         .contains(btleplug::api::CharPropFlags::INDICATE)
             })
@@ -316,10 +314,7 @@ impl StealthTechDevice {
         info!("Monitoring notifications. Use the official app or remote to generate traffic...");
 
         while let Some(notification) = stream.next().await {
-            let response = Response::decode(
-                notification.uuid,
-                &notification.value,
-            );
+            let response = Response::decode(notification.uuid, &notification.value);
 
             match response {
                 Response::Unknown {
@@ -351,9 +346,7 @@ impl StealthTechDevice {
         let char = chars
             .iter()
             .find(|c| c.uuid == uuid)
-            .ok_or_else(|| {
-                anyhow::anyhow!("Characteristic {} not found on device", uuid)
-            })?
+            .ok_or_else(|| anyhow::anyhow!("Characteristic {} not found on device", uuid))?
             .clone();
 
         self.connection

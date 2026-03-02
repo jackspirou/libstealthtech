@@ -72,9 +72,7 @@ pub async fn run(command: SniffCommands, scan_timeout: u64) -> anyhow::Result<()
                 scan_timeout
             );
 
-            let devices = scanner
-                .scan_all(Duration::from_secs(scan_timeout))
-                .await?;
+            let devices = scanner.scan_all(Duration::from_secs(scan_timeout)).await?;
 
             println!("{:<30} {:<20} {:<8}", "NAME", "ADDRESS", "RSSI");
             println!("{}", "─".repeat(60));
@@ -121,8 +119,7 @@ pub async fn run(command: SniffCommands, scan_timeout: u64) -> anyhow::Result<()
             let notifiable: Vec<_> = chars
                 .iter()
                 .filter(|c| {
-                    c.properties
-                        .contains(btleplug::api::CharPropFlags::NOTIFY)
+                    c.properties.contains(btleplug::api::CharPropFlags::NOTIFY)
                         || c.properties
                             .contains(btleplug::api::CharPropFlags::INDICATE)
                 })
@@ -214,27 +211,19 @@ pub async fn run(command: SniffCommands, scan_timeout: u64) -> anyhow::Result<()
                 .cloned()
                 .collect();
 
-            println!(
-                "Reading {} readable characteristics...\n",
-                readable.len()
-            );
+            println!("Reading {} readable characteristics...\n", readable.len());
 
-            println!(
-                "{:<40} {:<16} {:<6} VALUE",
-                "UUID", "SERVICE", "LEN"
-            );
+            println!("{:<40} {:<16} {:<6} VALUE", "UUID", "SERVICE", "LEN");
             println!("{}", "─".repeat(90));
 
             for char in &readable {
                 match conn.read(char).await {
                     Ok(data) => {
                         let hex_str = hex::encode(&data);
-                        let utf8 = String::from_utf8(data.clone())
-                            .ok()
-                            .filter(|s| {
-                                s.chars()
-                                    .all(|c| c.is_ascii_graphic() || c.is_ascii_whitespace())
-                            });
+                        let utf8 = String::from_utf8(data.clone()).ok().filter(|s| {
+                            s.chars()
+                                .all(|c| c.is_ascii_graphic() || c.is_ascii_whitespace())
+                        });
 
                         let display = if let Some(ref s) = utf8 {
                             format!("{} (\"{}\")", hex_str, s)
@@ -283,12 +272,8 @@ pub async fn run(command: SniffCommands, scan_timeout: u64) -> anyhow::Result<()
                 .clone();
 
             println!("Writing {} bytes to {}...", raw_data.len(), uuid);
-            conn.write(
-                &char,
-                &raw_data,
-                btleplug::api::WriteType::WithResponse,
-            )
-            .await?;
+            conn.write(&char, &raw_data, btleplug::api::WriteType::WithResponse)
+                .await?;
             println!("✓ Write successful");
 
             conn.disconnect().await?;
@@ -307,25 +292,18 @@ async fn connect_to_device(
 
     let device = if let Some(ref addr) = address {
         // When address is specified, scan all devices (not just StealthTech)
-        let all = scanner
-            .scan_all(Duration::from_secs(scan_timeout))
-            .await?;
+        let all = scanner.scan_all(Duration::from_secs(scan_timeout)).await?;
         all.into_iter()
             .find(|d| d.address.to_lowercase() == addr.to_lowercase())
             .ok_or_else(|| anyhow::anyhow!("Device {} not found", addr))?
     } else {
-        let devices = scanner
-            .scan(Duration::from_secs(scan_timeout))
-            .await?;
-        devices
-            .into_iter()
-            .next()
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "No StealthTech devices found. Use --address to specify a device, \
+        let devices = scanner.scan(Duration::from_secs(scan_timeout)).await?;
+        devices.into_iter().next().ok_or_else(|| {
+            anyhow::anyhow!(
+                "No StealthTech devices found. Use --address to specify a device, \
                      or run `stealthtech sniff scan-all` to see all BLE devices."
-                )
-            })?
+            )
+        })?
     };
 
     println!(

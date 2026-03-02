@@ -27,7 +27,9 @@ impl fmt::Display for ConnectionState {
             ConnectionState::Disconnected => write!(f, "Disconnected"),
             ConnectionState::Connecting => write!(f, "Connecting"),
             ConnectionState::Connected => write!(f, "Connected"),
-            ConnectionState::Reconnecting { attempt } => write!(f, "Reconnecting (attempt {})", attempt),
+            ConnectionState::Reconnecting { attempt } => {
+                write!(f, "Reconnecting (attempt {})", attempt)
+            }
         }
     }
 }
@@ -168,7 +170,11 @@ impl Connection {
             "BLE write"
         );
 
-        match self.peripheral.write(characteristic, data, write_type).await {
+        match self
+            .peripheral
+            .write(characteristic, data, write_type)
+            .await
+        {
             Ok(()) => Ok(()),
             Err(e) => {
                 warn!(error = %e, uuid = %characteristic.uuid, "BLE write failed, attempting reconnect");
@@ -191,8 +197,9 @@ impl Connection {
     /// Get the notification stream from the peripheral.
     pub async fn notifications(
         &self,
-    ) -> anyhow::Result<std::pin::Pin<Box<dyn futures::Stream<Item = btleplug::api::ValueNotification> + Send>>>
-    {
+    ) -> anyhow::Result<
+        std::pin::Pin<Box<dyn futures::Stream<Item = btleplug::api::ValueNotification> + Send>>,
+    > {
         Ok(self.peripheral.notifications().await?)
     }
 
@@ -212,7 +219,12 @@ impl Connection {
                 self.config.reconnect_max_delay,
             );
 
-            warn!(attempt, max = self.config.max_reconnect_attempts, ?delay, "Reconnecting...");
+            warn!(
+                attempt,
+                max = self.config.max_reconnect_attempts,
+                ?delay,
+                "Reconnecting..."
+            );
 
             tokio::time::sleep(delay).await;
 

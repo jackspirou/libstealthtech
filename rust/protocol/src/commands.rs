@@ -325,9 +325,7 @@ impl Command {
             Command::SetMute(on) => (CHAR_EQ_CONTROL, format_a(0x03, 0x09, u8::from(*on))),
             Command::SetQuietCouch(on) => (CHAR_EQ_CONTROL, format_a(0x03, 0x04, u8::from(*on))),
             // Preset uses Format B
-            Command::SetSoundMode(mode) => {
-                (CHAR_EQ_CONTROL, format_b(0x03, mode.to_write_byte()))
-            }
+            Command::SetSoundMode(mode) => (CHAR_EQ_CONTROL, format_b(0x03, mode.to_write_byte())),
 
             // AudioPath characteristic (0x04 cmd_id, Format A)
             Command::SetBalance(v) => (CHAR_AUDIO_PATH, format_a(0x04, 0x00, *v)),
@@ -337,9 +335,7 @@ impl Command {
             Command::SetInput(input) => (CHAR_SOURCE, format_b(0x07, input.to_byte())),
 
             // SystemLayout characteristic
-            Command::SetConfigShape(shape) => {
-                (CHAR_SYSTEM_LAYOUT, format_b(0x06, shape.to_byte()))
-            }
+            Command::SetConfigShape(shape) => (CHAR_SYSTEM_LAYOUT, format_b(0x06, shape.to_byte())),
 
             // Covering characteristic
             Command::SetFabric(id) => (CHAR_COVERING, format_b(0x08, *id)),
@@ -358,9 +354,7 @@ impl Command {
             Command::GetState => (CHAR_DEVICE_INFO, format_b(0x01, 0x01)),
             // Version request differs from Format B: last byte is 0x01 not 0x00.
             // This distinguishes it from GetState (which uses format_b, trailing 0x00).
-            Command::GetFirmwareVersion => {
-                (CHAR_DEVICE_INFO, vec![0xAA, 0x01, 0x01, 0x01])
-            }
+            Command::GetFirmwareVersion => (CHAR_DEVICE_INFO, vec![0xAA, 0x01, 0x01, 0x01]),
         };
 
         Ok((uuid, data))
@@ -394,7 +388,11 @@ pub enum Response {
     SubwooferConnected(bool),
     RearVolume(u8),
     /// Firmware version: (type, major, minor). Type: 1=MCU, 2=DSP, 3=EQ.
-    FirmwareVersion { fw_type: u8, major: u8, minor: u8 },
+    FirmwareVersion {
+        fw_type: u8,
+        major: u8,
+        minor: u8,
+    },
     /// Unknown/unparseable notification data.
     Unknown {
         characteristic_uuid: Uuid,
@@ -419,10 +417,18 @@ impl fmt::Display for Response {
             Response::Covering(v) => write!(f, "Covering: {}", v),
             Response::ArmType(v) => write!(f, "Arm Type: {}", v),
             Response::SubwooferConnected(on) => {
-                write!(f, "Subwoofer: {}", if *on { "connected" } else { "disconnected" })
+                write!(
+                    f,
+                    "Subwoofer: {}",
+                    if *on { "connected" } else { "disconnected" }
+                )
             }
             Response::RearVolume(v) => write!(f, "Rear: {}/{}", v, MAX_REAR_VOLUME),
-            Response::FirmwareVersion { fw_type, major, minor } => {
+            Response::FirmwareVersion {
+                fw_type,
+                major,
+                minor,
+            } => {
                 let name = match fw_type {
                     1 => "MCU",
                     2 => "DSP",
@@ -431,8 +437,16 @@ impl fmt::Display for Response {
                 };
                 write!(f, "Firmware {}: v{}.{}", name, major, minor)
             }
-            Response::Unknown { characteristic_uuid, data } => {
-                write!(f, "Unknown [{}]: {}", characteristic_uuid, hex::encode(data))
+            Response::Unknown {
+                characteristic_uuid,
+                data,
+            } => {
+                write!(
+                    f,
+                    "Unknown [{}]: {}",
+                    characteristic_uuid,
+                    hex::encode(data)
+                )
             }
         }
     }
@@ -481,20 +495,22 @@ impl Response {
             response_code::QUIET_MODE => Response::QuietMode(value == 1),
             response_code::BALANCE => Response::Balance(value),
             response_code::LAYOUT => Response::Layout(value),
-            response_code::SOURCE => {
-                Input::from_byte(value).map_or_else(|_| Response::Unknown {
+            response_code::SOURCE => Input::from_byte(value).map_or_else(
+                |_| Response::Unknown {
                     characteristic_uuid,
                     data: data.to_vec(),
-                }, Response::CurrentInput)
-            }
+                },
+                Response::CurrentInput,
+            ),
             // Power is INVERTED: 0x00 = ON, 0x01 = OFF
             response_code::POWER => Response::Power(value == 0),
-            response_code::PRESET => {
-                SoundMode::from_read_byte(value).map_or_else(|_| Response::Unknown {
+            response_code::PRESET => SoundMode::from_read_byte(value).map_or_else(
+                |_| Response::Unknown {
                     characteristic_uuid,
                     data: data.to_vec(),
-                }, Response::CurrentSoundMode)
-            }
+                },
+                Response::CurrentSoundMode,
+            ),
             response_code::COVERING => Response::Covering(value),
             response_code::ARM_TYPE => Response::ArmType(value),
             response_code::SUBWOOFER => Response::SubwooferConnected(value == 1),
@@ -702,7 +718,10 @@ mod tests {
     #[test]
     fn decode_center_volume() {
         let data = make_notification(0x02, 15);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::CenterVolume(15));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::CenterVolume(15)
+        );
     }
 
     #[test]
@@ -720,25 +739,37 @@ mod tests {
     #[test]
     fn decode_mute_on() {
         let data = make_notification(0x05, 1);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::MuteState(true));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::MuteState(true)
+        );
     }
 
     #[test]
     fn decode_mute_off() {
         let data = make_notification(0x05, 0);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::MuteState(false));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::MuteState(false)
+        );
     }
 
     #[test]
     fn decode_quiet_mode() {
         let data = make_notification(0x06, 1);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::QuietMode(true));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::QuietMode(true)
+        );
     }
 
     #[test]
     fn decode_balance() {
         let data = make_notification(0x07, 50);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::Balance(50));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::Balance(50)
+        );
     }
 
     #[test]
@@ -763,14 +794,20 @@ mod tests {
     fn decode_power_on_is_zero() {
         // Power is INVERTED: 0 = ON
         let data = make_notification(0x0A, 0);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::Power(true));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::Power(true)
+        );
     }
 
     #[test]
     fn decode_power_off_is_one() {
         // Power is INVERTED: 1 = OFF
         let data = make_notification(0x0A, 1);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::Power(false));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::Power(false)
+        );
     }
 
     #[test]
@@ -821,7 +858,10 @@ mod tests {
     #[test]
     fn decode_rear_volume() {
         let data = make_notification(0x0F, 20);
-        assert_eq!(Response::decode(CHAR_UPSTREAM, &data), Response::RearVolume(20));
+        assert_eq!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::RearVolume(20)
+        );
     }
 
     #[test]
@@ -841,13 +881,19 @@ mod tests {
     #[test]
     fn decode_short_data_returns_unknown() {
         let data = vec![0xCC, 0x05, 0xAA];
-        assert!(matches!(Response::decode(CHAR_UPSTREAM, &data), Response::Unknown { .. }));
+        assert!(matches!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::Unknown { .. }
+        ));
     }
 
     #[test]
     fn decode_out_of_range_code_returns_unknown() {
         let data = make_notification(0xFF, 0x00);
-        assert!(matches!(Response::decode(CHAR_UPSTREAM, &data), Response::Unknown { .. }));
+        assert!(matches!(
+            Response::decode(CHAR_UPSTREAM, &data),
+            Response::Unknown { .. }
+        ));
     }
 
     // --- SoundMode write/read roundtrip ---

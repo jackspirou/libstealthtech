@@ -87,9 +87,7 @@ impl DeviceStateResponse {
                 eq: FirmwareComponentResponse {
                     current: state.eq_version.map(|v| format!("{v}")),
                     latest: format!("{LATEST_EQ_VERSION}"),
-                    up_to_date: state
-                        .eq_version
-                        .map(|v| v.is_at_least(&LATEST_EQ_VERSION)),
+                    up_to_date: state.eq_version.map(|v| v.is_at_least(&LATEST_EQ_VERSION)),
                 },
                 update_available: state.firmware_update_available().unwrap_or(false),
             })
@@ -313,13 +311,11 @@ async fn connect_device(
             }
 
             // Collect the notification burst (individual field updates) for up to 500ms
-            let deadline =
-                tokio::time::Instant::now() + Duration::from_millis(500);
+            let deadline = tokio::time::Instant::now() + Duration::from_millis(500);
             while let Ok(Some(notification)) =
                 tokio::time::timeout_at(deadline, stream.next()).await
             {
-                let response =
-                    Response::decode(notification.uuid, &notification.value);
+                let response = Response::decode(notification.uuid, &notification.value);
                 device.state_mut().apply_response(&response);
                 let msg = serde_json::json!({
                     "type": "notification",
@@ -334,8 +330,7 @@ async fn connect_device(
             let device_arc = state.device.clone();
             tokio::spawn(async move {
                 while let Some(notification) = stream.next().await {
-                    let response =
-                        Response::decode(notification.uuid, &notification.value);
+                    let response = Response::decode(notification.uuid, &notification.value);
                     // Update device state from external changes (remote, official app)
                     {
                         let mut guard = device_arc.lock().await;
@@ -382,9 +377,9 @@ async fn set_volume(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_volume(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_volume(payload.value).await })
+    })
     .await
 }
 
@@ -393,9 +388,9 @@ async fn set_bass(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_bass(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_bass(payload.value).await })
+    })
     .await
 }
 
@@ -404,9 +399,9 @@ async fn set_treble(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_treble(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_treble(payload.value).await })
+    })
     .await
 }
 
@@ -415,9 +410,9 @@ async fn set_mute(
     State(state): State<AppState>,
     Json(payload): Json<ValueBoolRequest>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_mute(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_mute(payload.value).await })
+    })
     .await
 }
 
@@ -440,9 +435,9 @@ async fn set_input(
         }
     };
 
-    with_device(&state, |device| Box::pin(async move {
-        device.set_input(input).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_input(input).await })
+    })
     .await
 }
 
@@ -466,9 +461,9 @@ async fn set_mode(
         }
     };
 
-    with_device(&state, |device| Box::pin(async move {
-        device.set_sound_mode(mode).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_sound_mode(mode).await })
+    })
     .await
 }
 
@@ -477,9 +472,9 @@ async fn set_power(
     State(state): State<AppState>,
     Json(payload): Json<ValueBoolRequest>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_power(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_power(payload.value).await })
+    })
     .await
 }
 
@@ -488,9 +483,9 @@ async fn set_quiet_couch(
     State(state): State<AppState>,
     Json(payload): Json<ValueBoolRequest>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_quiet_couch(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_quiet_couch(payload.value).await })
+    })
     .await
 }
 
@@ -499,9 +494,9 @@ async fn set_center_volume(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_center_volume(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_center_volume(payload.value).await })
+    })
     .await
 }
 
@@ -510,9 +505,9 @@ async fn set_rear_volume(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_rear_channel_volume(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_rear_channel_volume(payload.value).await })
+    })
     .await
 }
 
@@ -521,9 +516,9 @@ async fn set_balance(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_balance(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_balance(payload.value).await })
+    })
     .await
 }
 
@@ -546,9 +541,9 @@ async fn set_config_shape(
         }
     };
 
-    with_device(&state, |device| Box::pin(async move {
-        device.set_config_shape(shape).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_config_shape(shape).await })
+    })
     .await
 }
 
@@ -557,9 +552,9 @@ async fn set_surround(
     State(state): State<AppState>,
     Json(payload): Json<ValueBoolRequest>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_surround(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_surround(payload.value).await })
+    })
     .await
 }
 
@@ -568,9 +563,9 @@ async fn set_play_pause(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_play_pause(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_play_pause(payload.value).await })
+    })
     .await
 }
 
@@ -579,9 +574,9 @@ async fn set_skip(
     State(state): State<AppState>,
     Json(payload): Json<ValueU8Request>,
 ) -> impl IntoResponse {
-    with_device(&state, |device| Box::pin(async move {
-        device.set_skip(payload.value).await
-    }))
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_skip(payload.value).await })
+    })
     .await
 }
 
@@ -597,8 +592,9 @@ async fn with_device<F>(state: &AppState, op: F) -> axum::response::Response
 where
     F: for<'a> FnOnce(
         &'a mut StealthTechDevice,
-    )
-        -> std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send + 'a>>,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send + 'a>,
+    >,
 {
     let mut device_guard = state.device.lock().await;
     match device_guard.as_mut() {

@@ -190,9 +190,7 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Scan => {
             let scanner = Scanner::new().await?;
-            let devices = scanner
-                .scan(Duration::from_secs(cli.scan_timeout))
-                .await?;
+            let devices = scanner.scan(Duration::from_secs(cli.scan_timeout)).await?;
 
             if devices.is_empty() {
                 println!("No StealthTech devices found.");
@@ -200,10 +198,7 @@ async fn main() -> anyhow::Result<()> {
             } else {
                 println!("Found {} StealthTech device(s):\n", devices.len());
                 for device in &devices {
-                    println!(
-                        "  Name:    {}",
-                        device.name.as_deref().unwrap_or("Unknown")
-                    );
+                    println!("  Name:    {}", device.name.as_deref().unwrap_or("Unknown"));
                     println!("  Address: {}", device.address);
                     println!(
                         "  RSSI:    {} dBm",
@@ -297,10 +292,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Power { state } => {
             let mut device = find_and_connect(&cli).await?;
             device.set_power(state.is_on()).await?;
-            println!(
-                "Power {}",
-                if state.is_on() { "on" } else { "standby" }
-            );
+            println!("Power {}", if state.is_on() { "on" } else { "standby" });
             device.disconnect().await?;
         }
 
@@ -336,15 +328,12 @@ async fn find_and_connect(cli: &Cli) -> anyhow::Result<StealthTechDevice> {
             .ok_or_else(|| anyhow::anyhow!("Device with address {} not found", addr))?
     } else {
         let devices = scanner.scan(timeout).await?;
-        devices
-            .into_iter()
-            .next()
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "No StealthTech devices found. Make sure your center channel is powered on \
+        devices.into_iter().next().ok_or_else(|| {
+            anyhow::anyhow!(
+                "No StealthTech devices found. Make sure your center channel is powered on \
                      and nearby, or use --address to specify a device."
-                )
-            })?
+            )
+        })?
     };
 
     println!(

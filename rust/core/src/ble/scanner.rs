@@ -34,7 +34,10 @@ pub struct DiscoveredDevice {
 /// On macOS, CoreBluetooth does not expose real MAC addresses — btleplug
 /// returns `00:00:00:00:00:00` for every device. In that case we fall back
 /// to `Peripheral::id()` which gives the stable CoreBluetooth UUID.
-fn peripheral_address(peripheral: &Peripheral, properties: &btleplug::api::PeripheralProperties) -> String {
+fn peripheral_address(
+    peripheral: &Peripheral,
+    properties: &btleplug::api::PeripheralProperties,
+) -> String {
     let addr = properties.address.to_string();
     if addr == "00:00:00:00:00:00" {
         peripheral.id().to_string()
