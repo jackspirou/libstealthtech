@@ -13,6 +13,14 @@ any platform with a Bluetooth adapter.
 **The StealthTech BLE protocol has been fully reverse-engineered.** This project
 can control volume, input, EQ, sound modes, power, and more over BLE.
 
+**Try it now at [stealthtech.app](https://stealthtech.app)** — no app install
+required. Open the page in Chrome on your phone and connect to your system
+instantly via Web Bluetooth.
+
+<p align="center">
+  <img src="docs/screenshot.png" alt="StealthTech Remote web app connected to a Sound + Charge system" width="400">
+</p>
+
 ## Repository Structure
 
 ```
@@ -28,6 +36,7 @@ libstealthtech/
 │   └── wasm/                  # WebAssembly bindings for Web Bluetooth UI
 ├── swift/                     # iOS/macOS bindings (future)
 ├── java/                      # Android/Kotlin bindings (future)
+├── node/                      # Node.js bindings (future)
 ├── docs/
 │   ├── architecture.md        # Crate graph, BLE state machine, GATT flow
 │   ├── protocol-mapping.md    # Complete BLE protocol specification
@@ -83,6 +92,8 @@ cargo build --release
 | EQ / Balance / Power | **Working** -- center, rear, balance, quiet mode, power on/off |
 | Notification Decoding | **Working** -- all 15 response codes parsed from UpStream |
 | Firmware Version Query | **Working** -- MCU, DSP, EQ version retrieval |
+| Web Remote ([stealthtech.app](https://stealthtech.app)) | **Live** -- Web Bluetooth UI with full device control |
+| Documentation Site | **Live** -- hosted at [stealthtech.app/docs/](https://stealthtech.app/docs/) |
 
 ## Hardware Background
 
