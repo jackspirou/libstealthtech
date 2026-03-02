@@ -101,7 +101,7 @@ async function checkPreviousDevices() {
             bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
             reconnectBtn.style.display = "";
             reconnectBtn.textContent = "Reconnect to " + prev.name;
-            connectBtn.textContent = "Scan for New Device";
+            connectBtn.textContent = "Scan for Devices";
         }
     } catch (e) {
         // getDevices() not supported or no permissions -- ignore
@@ -231,7 +231,7 @@ async function reconnect() {
         statusText.textContent = "Disconnected";
         setCardDisconnected();
         reconnectBtn.style.display = "";
-        connectBtn.textContent = "Scan for New Device";
+        connectBtn.textContent = "Scan for Devices";
     }
 }
 
@@ -241,7 +241,7 @@ function onConnected() {
     // Prepare controls for next disconnect (reconnect available)
     reconnectBtn.style.display = "";
     reconnectBtn.textContent = "Reconnect to " + (bleDevice.name || "device");
-    connectBtn.textContent = "Scan for New Device";
+    connectBtn.textContent = "Scan for Devices";
 
     ST.updateUI({ connected: true, name: bleDevice.name || null });
     ST.addLogEntry("Connected to " + (bleDevice.name || "device"));
