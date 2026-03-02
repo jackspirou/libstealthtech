@@ -22,7 +22,6 @@ const $ = ST.$;
 const connectBtn = $("#connect-btn");
 const reconnectBtn = $("#reconnect-btn");
 const dividerOr = $("#divider-or");
-const btDisconnectBtn = $("#bt-disconnect-btn");
 const compatBanner = $("#compat-banner");
 const connectionPanel = $("#connection-panel");
 const connectingIndicator = $("#connecting-indicator");
@@ -36,6 +35,7 @@ let bleServer = null;
 let bleService = null;
 let charCache = {};
 let bleConnected = false;
+let upstreamChar = null; // tracked for listener cleanup
 
 // ---------- Browser compat gate ----------
 
@@ -110,6 +110,46 @@ async function checkPreviousDevices() {
     }
 }
 
+// ---------- Action → BLE command maps ----------
+
+const sliderCommands = {
+    "volume":          "SetVolume",
+    "bass":            "SetBass",
+    "treble":          "SetTreble",
+    "center-volume":   "SetCenterVolume",
+    "rear-volume":     "SetRearChannelVolume",
+    "balance":         "SetBalance",
+};
+
+const toggleCommands = {
+    "power":      "SetPower",
+    "mute":       "SetMute",
+    "quietCouch": "SetQuietCouch",
+    "surround":   "SetSurroundEnabled",
+};
+
+const inputEnum = {
+    hdmi:      "HdmiArc",
+    bluetooth: "Bluetooth",
+    aux:       "Aux",
+    optical:   "Optical",
+};
+
+const modeEnum = {
+    movies: "Movies",
+    music:  "Music",
+    tv:     "Tv",
+    news:   "News",
+    manual: "Manual",
+};
+
+const shapeEnum = {
+    straight: "Straight",
+    lshape:   "LShape",
+    ushape:   "UShape",
+    pit:      "Pit",
+};
+
 // ---------- BLE write queue ----------
 
 let writeQueue = Promise.resolve();
@@ -125,6 +165,28 @@ function sendCommand(cmdJson) {
     // Keep the queue going even if one command fails
     writeQueue = result.catch(() => {});
     return result;
+}
+
+function send(action, value) {
+    let cmd;
+    if (sliderCommands[action]) {
+        cmd = '{"' + sliderCommands[action] + '": ' + value + '}';
+    } else if (toggleCommands[action]) {
+        cmd = '{"' + toggleCommands[action] + '": ' + value + '}';
+    } else if (action === "input") {
+        cmd = '{"SetInput": "' + inputEnum[value] + '"}';
+    } else if (action === "mode") {
+        cmd = '{"SetSoundMode": "' + modeEnum[value] + '"}';
+    } else if (action === "config-shape") {
+        cmd = '{"SetConfigShape": "' + shapeEnum[value] + '"}';
+    } else if (action === "play-pause") {
+        cmd = '{"SetPlayPause": ' + value + '}';
+    } else if (action === "skip") {
+        cmd = '{"SetSkip": ' + value + '}';
+    } else {
+        return Promise.reject(new Error("Unknown action: " + action));
+    }
+    return sendCommand(cmd);
 }
 
 // ---------- Card state helpers ----------
@@ -174,9 +236,13 @@ async function connect() {
         bleService = await bleServer.getPrimaryService(SERVICE_UUID);
         charCache = {};
 
-        const upstream = await bleService.getCharacteristic(UPSTREAM_UUID);
-        await upstream.startNotifications();
-        upstream.addEventListener("characteristicvaluechanged", onNotification);
+        // Clean up previous listener if any
+        if (upstreamChar) {
+            upstreamChar.removeEventListener("characteristicvaluechanged", onNotification);
+        }
+        upstreamChar = await bleService.getCharacteristic(UPSTREAM_UUID);
+        await upstreamChar.startNotifications();
+        upstreamChar.addEventListener("characteristicvaluechanged", onNotification);
 
         onConnected();
 
@@ -217,9 +283,13 @@ async function reconnect() {
         bleService = await bleServer.getPrimaryService(SERVICE_UUID);
         charCache = {};
 
-        const upstream = await bleService.getCharacteristic(UPSTREAM_UUID);
-        await upstream.startNotifications();
-        upstream.addEventListener("characteristicvaluechanged", onNotification);
+        // Clean up previous listener if any
+        if (upstreamChar) {
+            upstreamChar.removeEventListener("characteristicvaluechanged", onNotification);
+        }
+        upstreamChar = await bleService.getCharacteristic(UPSTREAM_UUID);
+        await upstreamChar.startNotifications();
+        upstreamChar.addEventListener("characteristicvaluechanged", onNotification);
 
         onConnected();
 
@@ -269,7 +339,6 @@ async function disconnect() {
 
 connectBtn.addEventListener("click", connect);
 reconnectBtn.addEventListener("click", reconnect);
-btDisconnectBtn.addEventListener("click", disconnect);
 
 // ---------- Notification handler ----------
 
@@ -307,7 +376,11 @@ function onNotification(event) {
 
 // ---------- Init ----------
 
+let btInitDone = false;
+
 function btInit() {
+    if (btInitDone) return;
+    btInitDone = true;
     checkPreviousDevices();
 }
 
@@ -317,5 +390,5 @@ ST.registerTransport("bluetooth", {
     init: btInit,
     isConnected: function () { return bleConnected; },
     disconnect: disconnect,
-    sendCommand: sendCommand,
+    send: send,
 });

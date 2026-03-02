@@ -22,6 +22,20 @@
     var themeToggle = $("#theme-toggle");
     var themeIcon = $("#theme-icon");
 
+    // Connection card elements (used by updateUI)
+    var connectionPanel = $("#connection-panel");
+    var connectedDevice = $("#connected-device");
+    var connDeviceName = $("#connected-device-name");
+    var connFwText = $("#connected-firmware-text");
+    var fwBanner = $("#firmware-update-banner");
+    var btConnectingIndicator = $("#connecting-indicator");
+    var btConnectionControls = $("#connection-controls");
+    var srvConnectingIndicator = $("#server-connecting-indicator");
+    var srvConnectionControls = $("#server-connection-controls");
+    var subRow = $("#subwoofer-row");
+    var subStatus = $("#subwoofer-status");
+    var mediaCard = $("#media-card");
+
     // ---------- Percentage display helper ----------
 
     function toPercent(value, max) {
@@ -131,9 +145,7 @@
     }
 
     function escapeHtml(text) {
-        var div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
+        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     clearLogBtn.addEventListener("click", function () {
@@ -143,14 +155,14 @@
     // ---------- Transport abstraction ----------
 
     var transports = {};
-    var defaultMode = (serverConnection && serverConnection.style.display !== "none") ? "server" : "bluetooth";
-    var activeMode = localStorage.getItem("stealthtech-mode") || defaultMode;
+    var activeMode = null; // set after transports register
+    var transportResolved = false;
 
     function registerTransport(name, transport) {
         transports[name] = transport;
-        // If this is the active mode and it has an init, call it
-        if (name === activeMode && transport.init) {
-            transport.init();
+        // If the initial timer already fired (e.g. slow WASM load), re-resolve now
+        if (transportResolved) {
+            resolveTransports();
         }
     }
 
@@ -158,22 +170,22 @@
         return transports[activeMode] || null;
     }
 
-    function isConnected() {
-        var t = getActiveTransport();
-        return t && t.isConnected ? t.isConnected() : false;
-    }
-
     // ---------- Mode tab switching ----------
 
     var modeTabs = $$(".mode-tab");
+    var modeTabsContainer = $(".mode-tabs");
     var serverConnection = $("#server-connection");
     var bluetoothConnection = $("#bluetooth-connection");
 
     function switchMode(mode) {
-        // If connected, disconnect the current transport first
-        var currentTransport = getActiveTransport();
-        if (currentTransport && currentTransport.isConnected && currentTransport.isConnected()) {
-            currentTransport.disconnect();
+        var changing = mode !== activeMode;
+
+        // If switching away from a connected transport, disconnect first
+        if (changing) {
+            var currentTransport = getActiveTransport();
+            if (currentTransport && currentTransport.isConnected && currentTransport.isConnected()) {
+                currentTransport.disconnect();
+            }
         }
 
         activeMode = mode;
@@ -188,10 +200,12 @@
         if (serverConnection) serverConnection.style.display = mode === "server" ? "" : "none";
         if (bluetoothConnection) bluetoothConnection.style.display = mode === "bluetooth" ? "" : "none";
 
-        // Initialize the newly selected transport if it has an init
-        var newTransport = getActiveTransport();
-        if (newTransport && newTransport.init) {
-            newTransport.init();
+        // Initialize the transport on first switch to this mode
+        if (changing) {
+            var newTransport = getActiveTransport();
+            if (newTransport && newTransport.init) {
+                newTransport.init();
+            }
         }
     }
 
@@ -201,8 +215,37 @@
         });
     });
 
-    // Apply the initial mode on load
-    switchMode(activeMode);
+    // ---------- Auto-detect available transports ----------
+    // Wait briefly for scripts to register, then decide mode and tab visibility.
+
+    function resolveTransports() {
+        transportResolved = true;
+        var names = Object.keys(transports);
+        var saved = localStorage.getItem("stealthtech-mode");
+
+        // Show or hide tabs based on how many transports registered
+        if (modeTabsContainer) {
+            modeTabsContainer.style.display = names.length <= 1 ? "none" : "";
+        }
+
+        // Pick mode: prefer saved choice if that transport exists,
+        // otherwise prefer "server" (CLI context), fall back to whatever registered.
+        var mode;
+        if (saved && transports[saved]) {
+            mode = saved;
+        } else if (transports["server"]) {
+            mode = "server";
+        } else if (names.length > 0) {
+            mode = names[0];
+        } else {
+            mode = "server"; // nothing registered yet, show server panel as default
+        }
+
+        switchMode(mode);
+    }
+
+    // Short delay so both <script src="app.js"> and <script type="module" src="bluetooth.js"> can register
+    setTimeout(resolveTransports, 120);
 
     // ---------- Controls enabled/disabled ----------
 
@@ -293,37 +336,28 @@
         pit: "Pit",
     };
 
-    var shapeBleCommands = {
-        straight: '"Straight"',
-        lshape: '"LShape"',
-        ushape: '"UShape"',
-        pit: '"Pit"',
-    };
-
     function updateUI(state) {
         if (!state) return;
 
         // Connection status
         if (state.connected != null) {
-            var connectionPanel = $("#connection-panel");
-            var connectedDevice = $("#connected-device");
-            var connectingIndicator = $("#connecting-indicator");
-            var connectionControls = $("#connection-controls");
-
             if (state.connected) {
                 statusDot.className = "status-dot connected";
-                statusText.textContent = "Connected" + (state.name ? " - " + state.name : "");
+                statusText.innerHTML = "Connected" + (state.name ? ' <span class="status-device-name">- ' + escapeHtml(state.name) + '</span>' : "");
                 setControlsEnabled(true);
                 document.title = "Connected" + (state.name ? " - " + state.name : "") + " | StealthTech";
 
                 // Update card state
                 if (connectionPanel) connectionPanel.dataset.state = "connected";
                 if (connectedDevice) connectedDevice.style.display = "";
-                if (connectingIndicator) connectingIndicator.style.display = "none";
-                if (connectionControls) connectionControls.style.display = "none";
+
+                // Hide connecting indicators and connection controls for both modes
+                if (btConnectingIndicator) btConnectingIndicator.style.display = "none";
+                if (btConnectionControls) btConnectionControls.style.display = "none";
+                if (srvConnectingIndicator) srvConnectingIndicator.style.display = "none";
+                if (srvConnectionControls) srvConnectionControls.style.display = "none";
 
                 // Set device name in the connected panel
-                var connDeviceName = $("#connected-device-name");
                 if (connDeviceName) connDeviceName.textContent = state.name || "StealthTech Device";
             } else {
                 statusDot.className = "status-dot";
@@ -334,13 +368,15 @@
                 // Update card state
                 if (connectionPanel) connectionPanel.dataset.state = "disconnected";
                 if (connectedDevice) connectedDevice.style.display = "none";
-                if (connectingIndicator) connectingIndicator.style.display = "none";
-                if (connectionControls) connectionControls.style.display = "";
+
+                // Hide connecting indicators, restore connection controls for both modes
+                if (btConnectingIndicator) btConnectingIndicator.style.display = "none";
+                if (btConnectionControls) btConnectionControls.style.display = "";
+                if (srvConnectingIndicator) srvConnectingIndicator.style.display = "none";
+                if (srvConnectionControls) srvConnectionControls.style.display = "";
 
                 // Clear firmware text and hide update banner
-                var connFwText = $("#connected-firmware-text");
                 if (connFwText) connFwText.textContent = "";
-                var fwBanner = $("#firmware-update-banner");
                 if (fwBanner) fwBanner.style.display = "none";
             }
         }
@@ -404,8 +440,6 @@
         // Surround (handled by toggle map, but also set aria-pressed)
 
         // Subwoofer status (read-only)
-        var subRow = $("#subwoofer-row");
-        var subStatus = $("#subwoofer-status");
         if (state.subwoofer_connected != null && subRow && subStatus) {
             subRow.style.display = "";
             if (state.subwoofer_connected) {
@@ -418,7 +452,6 @@
         }
 
         // Media card visibility — show only when input is Bluetooth
-        var mediaCard = $("#media-card");
         if (mediaCard) {
             var currentInput = state.input ? (inputNormalize[state.input] || state.input) : null;
             mediaCard.style.display = currentInput === "Bluetooth" ? "" : "none";
@@ -472,27 +505,7 @@
         }
     }
 
-    // ---------- Unified slider handlers ----------
-
-    // Command names for the bluetooth transport (JSON command strings)
-    var sliderBleCommands = {
-        volume:          function (v) { return '{"SetVolume": ' + v + '}'; },
-        bass:            function (v) { return '{"SetBass": ' + v + '}'; },
-        treble:          function (v) { return '{"SetTreble": ' + v + '}'; },
-        "center-volume": function (v) { return '{"SetCenterVolume": ' + v + '}'; },
-        "rear-volume":   function (v) { return '{"SetRearChannelVolume": ' + v + '}'; },
-        balance:         function (v) { return '{"SetBalance": ' + v + '}'; },
-    };
-
-    // API endpoints for the server transport
-    var sliderApiEndpoints = {
-        volume:          "/api/volume",
-        bass:            "/api/bass",
-        treble:          "/api/treble",
-        "center-volume": "/api/center-volume",
-        "rear-volume":   "/api/rear-volume",
-        balance:         "/api/balance",
-    };
+    // ---------- Slider handlers ----------
 
     Object.keys(sliders).forEach(function (key) {
         var slider = sliders[key];
@@ -515,23 +528,12 @@
             var value = parseInt(slider.el.value, 10);
             var prev = slider._committed;
             var t = getActiveTransport();
-            if (!t) return;
+            if (!t || !t.send) return;
 
-            var promise;
-            if (activeMode === "server" && t.apiPost) {
-                promise = t.apiPost(sliderApiEndpoints[key], { value: value }).then(function (state) {
-                    slider._committed = value;
-                    updateUI(state);
-                });
-            } else if (activeMode === "bluetooth" && t.sendCommand) {
-                promise = t.sendCommand(sliderBleCommands[key](value)).then(function () {
-                    slider._committed = value;
-                });
-            } else {
-                return;
-            }
-
-            promise.catch(function (e) {
+            t.send(key, value).then(function (state) {
+                slider._committed = value;
+                if (state) updateUI(state);
+            }).catch(function (e) {
                 if (prev != null) {
                     slider.el.value = prev;
                     slider.val.textContent = toPercent(prev, parseInt(slider.el.max, 10));
@@ -541,21 +543,7 @@
         });
     });
 
-    // ---------- Unified toggle handlers ----------
-
-    var toggleBleCommands = {
-        power:      function (v) { return '{"SetPower": ' + v + '}'; },
-        mute:       function (v) { return '{"SetMute": ' + v + '}'; },
-        quietCouch: function (v) { return '{"SetQuietCouch": ' + v + '}'; },
-        surround: function (v) { return '{"SetSurroundEnabled": ' + v + '}'; },
-    };
-
-    var toggleApiEndpoints = {
-        power:      "/api/power",
-        mute:       "/api/mute",
-        quietCouch: "/api/quiet-couch",
-        surround: "/api/surround",
-    };
+    // ---------- Toggle handlers ----------
 
     Object.keys(toggles).forEach(function (key) {
         var toggle = toggles[key];
@@ -569,20 +557,11 @@
             toggle.el.setAttribute("aria-pressed", newValue);
 
             var t = getActiveTransport();
-            if (!t) return;
+            if (!t || !t.send) return;
 
-            var promise;
-            if (activeMode === "server" && t.apiPost) {
-                promise = t.apiPost(toggleApiEndpoints[key], { value: newValue }).then(function (state) {
-                    updateUI(state);
-                });
-            } else if (activeMode === "bluetooth" && t.sendCommand) {
-                promise = t.sendCommand(toggleBleCommands[key](newValue));
-            } else {
-                return;
-            }
-
-            promise.catch(function (e) {
+            t.send(key, newValue).then(function (state) {
+                if (state) updateUI(state);
+            }).catch(function (e) {
                 toggle.el.dataset.active = currentValue;
                 toggle.el.textContent = currentValue ? "ON" : "OFF";
                 toggle.el.setAttribute("aria-pressed", currentValue);
@@ -591,14 +570,7 @@
         });
     });
 
-    // ---------- Unified input button handlers ----------
-
-    var inputBleCommands = {
-        hdmi: '"HdmiArc"',
-        bluetooth: '"Bluetooth"',
-        aux: '"Aux"',
-        optical: '"Optical"',
-    };
+    // ---------- Input button handlers ----------
 
     $$("[data-input]").forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -610,20 +582,11 @@
             btn.classList.add("active");
 
             var t = getActiveTransport();
-            if (!t) return;
+            if (!t || !t.send) return;
 
-            var promise;
-            if (activeMode === "server" && t.apiPost) {
-                promise = t.apiPost("/api/input", { value: input }).then(function (state) {
-                    updateUI(state);
-                });
-            } else if (activeMode === "bluetooth" && t.sendCommand) {
-                promise = t.sendCommand('{"SetInput": ' + inputBleCommands[input] + '}');
-            } else {
-                return;
-            }
-
-            promise.catch(function (e) {
+            t.send("input", input).then(function (state) {
+                if (state) updateUI(state);
+            }).catch(function (e) {
                 $$("[data-input]").forEach(function (b) { b.classList.remove("active"); });
                 if (prevActive) prevActive.classList.add("active");
                 showError("Failed to set input: " + e.message);
@@ -631,15 +594,7 @@
         });
     });
 
-    // ---------- Unified mode button handlers ----------
-
-    var modeBleCommands = {
-        movies: '"Movies"',
-        music: '"Music"',
-        tv: '"Tv"',
-        news: '"News"',
-        manual: '"Manual"',
-    };
+    // ---------- Mode button handlers ----------
 
     $$(".btn-option[data-mode]").forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -651,20 +606,11 @@
             btn.classList.add("active");
 
             var t = getActiveTransport();
-            if (!t) return;
+            if (!t || !t.send) return;
 
-            var promise;
-            if (activeMode === "server" && t.apiPost) {
-                promise = t.apiPost("/api/mode", { value: mode }).then(function (state) {
-                    updateUI(state);
-                });
-            } else if (activeMode === "bluetooth" && t.sendCommand) {
-                promise = t.sendCommand('{"SetSoundMode": ' + modeBleCommands[mode] + '}');
-            } else {
-                return;
-            }
-
-            promise.catch(function (e) {
+            t.send("mode", mode).then(function (state) {
+                if (state) updateUI(state);
+            }).catch(function (e) {
                 $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
                 if (prevActive) prevActive.classList.add("active");
                 showError("Failed to set mode: " + e.message);
@@ -672,7 +618,7 @@
         });
     });
 
-    // ---------- Unified shape button handlers ----------
+    // ---------- Shape button handlers ----------
 
     $$("[data-shape]").forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -684,20 +630,11 @@
             btn.classList.add("active");
 
             var t = getActiveTransport();
-            if (!t) return;
+            if (!t || !t.send) return;
 
-            var promise;
-            if (activeMode === "server" && t.apiPost) {
-                promise = t.apiPost("/api/config-shape", { value: shape }).then(function (state) {
-                    updateUI(state);
-                });
-            } else if (activeMode === "bluetooth" && t.sendCommand) {
-                promise = t.sendCommand('{"SetConfigShape": ' + shapeBleCommands[shape] + '}');
-            } else {
-                return;
-            }
-
-            promise.catch(function (e) {
+            t.send("config-shape", shape).then(function (state) {
+                if (state) updateUI(state);
+            }).catch(function (e) {
                 $$("[data-shape]").forEach(function (b) { b.classList.remove("active"); });
                 if (prevActive) prevActive.classList.add("active");
                 showError("Failed to set shape: " + e.message);
@@ -708,9 +645,9 @@
     // ---------- Media control handlers ----------
 
     var mediaButtons = [
-        { id: "play-pause-btn", api: "/api/play-pause", ble: '{"SetPlayPause": 1}', value: 1, label: "Play/Pause" },
-        { id: "skip-fwd-btn",   api: "/api/skip",       ble: '{"SetSkip": 0}',      value: 0, label: "Skip forward" },
-        { id: "skip-back-btn",  api: "/api/skip",       ble: '{"SetSkip": 1}',      value: 1, label: "Skip back" },
+        { id: "play-pause-btn", action: "play-pause", value: 1, label: "Play/Pause" },
+        { id: "skip-fwd-btn",   action: "skip",       value: 0, label: "Skip forward" },
+        { id: "skip-back-btn",  action: "skip",       value: 1, label: "Skip back" },
     ];
 
     mediaButtons.forEach(function (cfg) {
@@ -718,22 +655,23 @@
         if (!btn) return;
         btn.addEventListener("click", function () {
             var t = getActiveTransport();
-            if (!t) return;
+            if (!t || !t.send) return;
 
-            var promise;
-            if (activeMode === "server" && t.apiPost) {
-                promise = t.apiPost(cfg.api, { value: cfg.value });
-            } else if (activeMode === "bluetooth" && t.sendCommand) {
-                promise = t.sendCommand(cfg.ble);
-            } else {
-                return;
-            }
-
-            promise.catch(function (e) {
+            t.send(cfg.action, cfg.value).catch(function (e) {
                 showError(cfg.label + " failed: " + e.message);
             });
         });
     });
+
+    // ---------- Unified disconnect button ----------
+
+    var deviceDisconnectBtn = $("#device-disconnect-btn");
+    if (deviceDisconnectBtn) {
+        deviceDisconnectBtn.addEventListener("click", function () {
+            var t = getActiveTransport();
+            if (t && t.disconnect) t.disconnect();
+        });
+    }
 
     // ---------- Public API ----------
 

@@ -54,9 +54,9 @@ pub fn export(output: &Path) -> anyhow::Result<()> {
 
     std::fs::create_dir_all(output)?;
 
-    // Write the standalone bluetooth-only index.html
-    let index_html = embed::StaticFiles::get("standalone.html")
-        .ok_or_else(|| anyhow::anyhow!("standalone.html not found in embedded files"))?;
+    // Write the unified index.html (shared.js auto-hides mode tabs when app.js is absent)
+    let index_html = embed::StaticFiles::get("index.html")
+        .ok_or_else(|| anyhow::anyhow!("index.html not found in embedded files"))?;
     std::fs::write(output.join("index.html"), index_html.data.as_ref())?;
     println!("  index.html");
 

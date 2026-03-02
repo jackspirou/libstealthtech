@@ -13,14 +13,21 @@
     // ---------- DOM references ----------
 
     var scanBtn = $("#scan-btn");
-    var disconnectBtn = $("#disconnect-btn");
+    var serverReconnectBtn = $("#server-reconnect-btn");
+    var serverDividerOr = $("#server-divider-or");
     var deviceList = $("#device-list");
+    var connectionPanel = $("#connection-panel");
+    var serverConnectingIndicator = $("#server-connecting-indicator");
+    var serverConnectingText = $("#server-connecting-text");
+    var serverConnectionControls = $("#server-connection-controls");
+    var connectedDevice = $("#connected-device");
 
     // ---------- State ----------
 
     var wsConnection = null;
     var reconnectAttempts = 0;
     var MAX_RECONNECT_DELAY = 30000;
+    var MAX_RECONNECT_ATTEMPTS = 50;
     var LAST_DEVICE_KEY = "stealthtech-last-device";
 
     // ---------- API helpers ----------
@@ -47,12 +54,55 @@
         return res.json();
     }
 
+    // ---------- Action → endpoint map ----------
+
+    var actionEndpoints = {
+        "volume":          "/api/volume",
+        "bass":            "/api/bass",
+        "treble":          "/api/treble",
+        "center-volume":   "/api/center-volume",
+        "rear-volume":     "/api/rear-volume",
+        "balance":         "/api/balance",
+        "power":           "/api/power",
+        "mute":            "/api/mute",
+        "quietCouch":      "/api/quiet-couch",
+        "surround":        "/api/surround",
+        "input":           "/api/input",
+        "mode":            "/api/mode",
+        "config-shape":    "/api/config-shape",
+        "play-pause":      "/api/play-pause",
+        "skip":            "/api/skip",
+    };
+
+    function send(action, value) {
+        var endpoint = actionEndpoints[action];
+        if (!endpoint) return Promise.reject(new Error("Unknown action: " + action));
+        return apiPost(endpoint, { value: value });
+    }
+
     // ---------- Connection state ----------
 
     var connected = false;
 
     function isConnected() {
         return connected;
+    }
+
+    // ---------- Card state helpers ----------
+
+    function setServerConnecting(message) {
+        if (connectionPanel) connectionPanel.dataset.state = "connecting";
+        if (serverConnectingIndicator) serverConnectingIndicator.style.display = "";
+        if (serverConnectingText) serverConnectingText.textContent = message || "Connecting...";
+        if (serverConnectionControls) serverConnectionControls.style.display = "none";
+        deviceList.innerHTML = "";
+    }
+
+    function setServerDisconnected() {
+        if (connectionPanel) connectionPanel.dataset.state = "disconnected";
+        if (serverConnectingIndicator) serverConnectingIndicator.style.display = "none";
+        if (serverConnectionControls) serverConnectionControls.style.display = "";
+        if (connectedDevice) connectedDevice.style.display = "none";
     }
 
     // ---------- Load initial state ----------
@@ -62,7 +112,6 @@
             var state = await apiGet("/api/state");
             connected = !!state.connected;
             ST.updateUI(state);
-            disconnectBtn.disabled = !connected;
 
             if (!state.connected) {
                 showReconnectOption();
@@ -72,52 +121,59 @@
         }
     }
 
-    function showReconnectOption() {
+    function getLastDevice() {
         var saved = localStorage.getItem(LAST_DEVICE_KEY);
-        if (!saved) return;
-
+        if (!saved) return null;
         try {
-            var lastDevice = JSON.parse(saved);
-            var label = lastDevice.name || lastDevice.address;
-            deviceList.innerHTML =
-                '<div class="device-item">' +
-                    '<div class="device-info">' +
-                        '<span class="device-name">' + label + '</span>' +
-                        '<span class="device-address">Last connected device</span>' +
-                    '</div>' +
-                    '<button class="btn btn-primary btn-connect" id="server-reconnect-btn">Reconnect</button>' +
-                '</div>';
-
-            $("#server-reconnect-btn").addEventListener("click", function () {
-                autoReconnect(lastDevice.address);
-            });
+            return JSON.parse(saved);
         } catch (e) {
             localStorage.removeItem(LAST_DEVICE_KEY);
+            return null;
         }
     }
 
-    async function autoReconnect(address) {
-        deviceList.innerHTML = '<div class="scanning-indicator"><div class="spinner"></div>Scanning and reconnecting...</div>';
+    function showReconnectOption() {
+        var lastDevice = getLastDevice();
+        if (!lastDevice) return;
+
+        var label = lastDevice.name || lastDevice.address;
+        serverReconnectBtn.textContent = "Reconnect to " + label;
+        serverReconnectBtn.style.display = "";
+        serverDividerOr.style.display = "";
+    }
+
+    async function autoReconnect() {
+        var lastDevice = getLastDevice();
+        if (!lastDevice) return;
+
+        setServerConnecting("Reconnecting to " + (lastDevice.name || lastDevice.address) + "...");
 
         try {
             await apiGet("/api/devices");
-            await connectToDevice(address);
+            await connectToDevice(lastDevice.address);
         } catch (e) {
             ST.showError("Reconnect failed: " + e.message);
-            deviceList.innerHTML = "";
+            setServerDisconnected();
             showReconnectOption();
         }
     }
+
+    serverReconnectBtn.addEventListener("click", autoReconnect);
 
     // ---------- Scan ----------
 
     scanBtn.addEventListener("click", async function () {
         scanBtn.disabled = true;
-        scanBtn.textContent = "Scanning...";
-        deviceList.innerHTML = '<div class="scanning-indicator"><div class="spinner"></div>Scanning for devices...</div>';
+        setServerConnecting("Scanning for devices...");
 
         try {
             var devices = await apiGet("/api/devices");
+
+            // Restore controls and show results
+            if (serverConnectingIndicator) serverConnectingIndicator.style.display = "none";
+            if (serverConnectionControls) serverConnectionControls.style.display = "";
+            if (connectionPanel) connectionPanel.dataset.state = "disconnected";
+
             deviceList.innerHTML = "";
 
             if (devices.length === 0) {
@@ -145,41 +201,37 @@
             }
         } catch (e) {
             ST.showError("Scan failed: " + e.message);
-            deviceList.innerHTML = "";
+            setServerDisconnected();
         } finally {
             scanBtn.disabled = false;
-            scanBtn.textContent = "Scan for Devices";
         }
     });
 
     // ---------- Connect / Disconnect ----------
 
     async function connectToDevice(address) {
-        var statusDot = $("#status-dot");
-        var statusText = $("#status-text");
-        var connectionPanel = $("#connection-panel");
-        statusDot.className = "status-dot connecting";
-        statusText.textContent = "Connecting...";
-        if (connectionPanel) connectionPanel.dataset.state = "connecting";
+        setServerConnecting("Connecting...");
 
         try {
             var state = await apiPost("/api/connect", { address: address });
             connected = !!state.connected;
             ST.updateUI(state);
-            disconnectBtn.disabled = !connected;
             deviceList.innerHTML = "";
             if (state.connected) {
                 localStorage.setItem(LAST_DEVICE_KEY, JSON.stringify({
                     address: state.address || address,
                     name: state.name || null,
                 }));
+                // Set up reconnect for next disconnect
+                serverReconnectBtn.textContent = "Reconnect to " + (state.name || address);
+                serverReconnectBtn.style.display = "";
+                serverDividerOr.style.display = "";
             }
             ST.addLogEntry("Connected to " + (state.name || address));
         } catch (e) {
             ST.showError("Connection failed: " + e.message);
-            statusDot.className = "status-dot";
-            statusText.textContent = "Disconnected";
-            if (connectionPanel) connectionPanel.dataset.state = "disconnected";
+            setServerDisconnected();
+            showReconnectOption();
         }
     }
 
@@ -188,14 +240,11 @@
             var state = await apiPost("/api/disconnect", {});
             connected = false;
             ST.updateUI(state);
-            disconnectBtn.disabled = true;
             ST.addLogEntry("Disconnected from device");
         } catch (e) {
             ST.showError("Disconnect failed: " + e.message);
         }
     }
-
-    disconnectBtn.addEventListener("click", disconnect);
 
     // ---------- WebSocket ----------
 
@@ -231,6 +280,10 @@
 
     function scheduleReconnect() {
         reconnectAttempts++;
+        if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+            ST.addLogEntry("[WS] Max reconnect attempts reached (" + MAX_RECONNECT_ATTEMPTS + "), giving up");
+            return;
+        }
         var delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), MAX_RECONNECT_DELAY);
         setTimeout(connectWebSocket, delay);
     }
@@ -243,6 +296,6 @@
         init: init,
         isConnected: isConnected,
         disconnect: disconnect,
-        apiPost: apiPost,
+        send: send,
     });
 })();

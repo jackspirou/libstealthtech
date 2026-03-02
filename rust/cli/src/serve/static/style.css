@@ -330,6 +330,12 @@ main {
     font-weight: 500;
 }
 
+.connecting-hint {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
 .spinner-lg {
     width: 32px;
     height: 32px;
@@ -851,6 +857,12 @@ input[type="range"]::-moz-range-track {
 }
 
 /* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+    .subtitle {
+        display: none;
+    }
+}
+
 @media (max-width: 520px) {
     header {
         padding: 12px 16px;
@@ -860,7 +872,7 @@ input[type="range"]::-moz-range-track {
         font-size: 1.15rem;
     }
 
-    .subtitle {
+    .status-device-name {
         display: none;
     }
 
@@ -884,10 +896,6 @@ input[type="range"]::-moz-range-track {
         font-size: 0.82rem;
     }
 
-    .status-text {
-        display: none;
-    }
-
     .device-identity {
         flex-wrap: wrap;
     }
@@ -895,6 +903,12 @@ input[type="range"]::-moz-range-track {
     .device-identity .btn {
         width: 100%;
         margin-top: 4px;
+    }
+}
+
+@media (max-width: 400px) {
+    .status-text {
+        display: none;
     }
 }
 
