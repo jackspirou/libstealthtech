@@ -23,6 +23,10 @@ const connectBtn = $("#connect-btn");
 const reconnectBtn = $("#reconnect-btn");
 const btDisconnectBtn = $("#bt-disconnect-btn");
 const compatBanner = $("#compat-banner");
+const connectionPanel = $("#connection-panel");
+const connectingIndicator = $("#connecting-indicator");
+const connectingText = $("#connecting-text");
+const connectionControls = $("#connection-controls");
 
 // ---------- BLE state ----------
 
@@ -121,6 +125,21 @@ function sendCommand(cmdJson) {
     return result;
 }
 
+// ---------- Card state helpers ----------
+
+function setCardConnecting(message) {
+    if (connectionPanel) connectionPanel.dataset.state = "connecting";
+    if (connectingIndicator) connectingIndicator.style.display = "";
+    if (connectingText) connectingText.textContent = message || "Connecting...";
+    if (connectionControls) connectionControls.style.display = "none";
+}
+
+function setCardDisconnected() {
+    if (connectionPanel) connectionPanel.dataset.state = "disconnected";
+    if (connectingIndicator) connectingIndicator.style.display = "none";
+    if (connectionControls) connectionControls.style.display = "";
+}
+
 // ---------- Connect ----------
 
 async function connect() {
@@ -129,6 +148,7 @@ async function connect() {
         const statusText = $("#status-text");
         statusDot.className = "status-dot connecting";
         statusText.textContent = "Connecting...";
+        setCardConnecting("Connecting...");
 
         bleDevice = await navigator.bluetooth.requestDevice({
             filters: [
@@ -166,6 +186,7 @@ async function connect() {
             const statusText = $("#status-text");
             statusDot.className = "status-dot";
             statusText.textContent = "Disconnected";
+            setCardDisconnected();
             return;
         }
         ST.showError("Connection failed: " + e.message);
@@ -173,6 +194,7 @@ async function connect() {
         const statusText = $("#status-text");
         statusDot.className = "status-dot";
         statusText.textContent = "Disconnected";
+        setCardDisconnected();
     }
 }
 
@@ -187,6 +209,7 @@ async function reconnect() {
         const statusText = $("#status-text");
         statusDot.className = "status-dot connecting";
         statusText.textContent = "Reconnecting...";
+        setCardConnecting("Reconnecting to " + (bleDevice.name || "device") + "...");
 
         bleServer = await bleDevice.gatt.connect();
         bleService = await bleServer.getPrimaryService(SERVICE_UUID);
@@ -206,6 +229,7 @@ async function reconnect() {
         const statusText = $("#status-text");
         statusDot.className = "status-dot";
         statusText.textContent = "Disconnected";
+        setCardDisconnected();
         reconnectBtn.style.display = "";
         connectBtn.textContent = "Connect New Device";
     }
@@ -213,9 +237,11 @@ async function reconnect() {
 
 function onConnected() {
     bleConnected = true;
-    btDisconnectBtn.disabled = false;
-    reconnectBtn.style.display = "none";
-    connectBtn.style.display = "none";
+
+    // Prepare controls for next disconnect (reconnect available)
+    reconnectBtn.style.display = "";
+    reconnectBtn.textContent = "Reconnect to " + (bleDevice.name || "device");
+    connectBtn.textContent = "Connect New Device";
 
     ST.updateUI({ connected: true, name: bleDevice.name || null });
     ST.addLogEntry("Connected to " + (bleDevice.name || "device"));
@@ -223,12 +249,7 @@ function onConnected() {
 
 function onDisconnect() {
     bleConnected = false;
-    btDisconnectBtn.disabled = true;
     charCache = {};
-
-    reconnectBtn.style.display = "";
-    connectBtn.style.display = "";
-    connectBtn.textContent = "Connect New Device";
 
     ST.updateUI({ connected: false });
     ST.addLogEntry("Device disconnected");
@@ -239,10 +260,6 @@ async function disconnect() {
         bleDevice.gatt.disconnect();
     }
     bleConnected = false;
-    btDisconnectBtn.disabled = true;
-    reconnectBtn.style.display = "";
-    connectBtn.style.display = "";
-    connectBtn.textContent = "Connect New Device";
     charCache = {};
     ST.updateUI({ connected: false });
     ST.addLogEntry("Disconnected from device");

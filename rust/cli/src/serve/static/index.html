@@ -30,7 +30,7 @@
 
     <main>
         <!-- Connection Panel -->
-        <section class="card connection-card" id="connection-panel">
+        <section class="card connection-card" id="connection-panel" data-state="disconnected">
             <h2>Connection</h2>
             <div class="mode-tabs">
                 <button class="mode-tab active" data-mode="server">Server BLE</button>
@@ -43,20 +43,27 @@
                 </div>
                 <div class="device-list" id="device-list"></div>
             </div>
+            <div class="compat-banner" id="compat-banner" style="display:none"></div>
             <div id="bluetooth-connection" class="connection-mode" style="display:none">
-                <div class="compat-banner" id="compat-banner" style="display:none"></div>
-                <div class="connection-controls">
+                <div class="connecting-indicator" id="connecting-indicator" style="display:none">
+                    <div class="spinner spinner-lg"></div>
+                    <span id="connecting-text">Connecting...</span>
+                </div>
+                <div class="connection-controls" id="connection-controls">
                     <button class="btn btn-primary" id="connect-btn">Connect</button>
                     <button class="btn btn-primary" id="reconnect-btn" style="display:none">Reconnect</button>
-                    <button class="btn btn-danger" id="bt-disconnect-btn" disabled>Disconnect</button>
                 </div>
             </div>
-            <div id="firmware-info" class="device-list" style="display:none">
-                <div class="device-item">
-                    <div class="device-info">
-                        <span class="device-name" id="device-name">Firmware</span>
-                        <span class="device-address" id="firmware-version"></span>
+            <div id="connected-device" class="connected-device-panel" style="display:none">
+                <div class="device-identity">
+                    <div class="device-identity-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><circle cx="12" cy="14" r="4"/><line x1="12" y1="6" x2="12.01" y2="6"/></svg>
                     </div>
+                    <div class="device-identity-info">
+                        <span class="device-identity-name" id="connected-device-name">Device</span>
+                        <span class="device-identity-firmware" id="connected-firmware-text"></span>
+                    </div>
+                    <button class="btn btn-danger btn-sm" id="bt-disconnect-btn">Disconnect</button>
                 </div>
             </div>
             <div class="firmware-update-banner" id="firmware-update-banner" style="display:none"></div>

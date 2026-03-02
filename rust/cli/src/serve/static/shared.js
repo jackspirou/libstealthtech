@@ -305,16 +305,41 @@
 
         // Connection status
         if (state.connected != null) {
+            var connectionPanel = $("#connection-panel");
+            var connectedDevice = $("#connected-device");
+            var connectingIndicator = $("#connecting-indicator");
+            var connectionControls = $("#connection-controls");
+
             if (state.connected) {
                 statusDot.className = "status-dot connected";
                 statusText.textContent = "Connected" + (state.name ? " - " + state.name : "");
                 setControlsEnabled(true);
                 document.title = "Connected" + (state.name ? " - " + state.name : "") + " | StealthTech";
+
+                // Update card state
+                if (connectionPanel) connectionPanel.dataset.state = "connected";
+                if (connectedDevice) connectedDevice.style.display = "";
+                if (connectingIndicator) connectingIndicator.style.display = "none";
+                if (connectionControls) connectionControls.style.display = "none";
+
+                // Set device name in the connected panel
+                var connDeviceName = $("#connected-device-name");
+                if (connDeviceName) connDeviceName.textContent = state.name || "StealthTech Device";
             } else {
                 statusDot.className = "status-dot";
                 statusText.textContent = "Disconnected";
                 setControlsEnabled(false);
                 document.title = "StealthTech Remote";
+
+                // Update card state
+                if (connectionPanel) connectionPanel.dataset.state = "disconnected";
+                if (connectedDevice) connectedDevice.style.display = "none";
+                if (connectingIndicator) connectingIndicator.style.display = "none";
+                if (connectionControls) connectionControls.style.display = "";
+
+                // Clear firmware text
+                var connFwText = $("#connected-firmware-text");
+                if (connFwText) connFwText.textContent = "";
             }
         }
 
@@ -406,9 +431,6 @@
     // ---------- Firmware display ----------
 
     function updateFirmwareDisplay(fw) {
-        var fwInfo = $("#firmware-info");
-        if (!fwInfo) return;
-
         // fw shape: { mcu: {current, latest, up_to_date}, dsp: ..., eq: ..., update_available }
         var components = ["mcu", "dsp", "eq"];
         var labels = { mcu: "MCU", dsp: "DSP", eq: "EQ" };
@@ -420,11 +442,10 @@
             if (c && c.current) parts.push(labels[key] + " " + c.current);
         });
 
-        if (parts.length === 0) return;
-
-        var fwVersion = $("#firmware-version");
-        if (fwVersion) fwVersion.textContent = parts.join(" / ");
-        fwInfo.style.display = "";
+        if (parts.length > 0) {
+            var fwText = $("#connected-firmware-text");
+            if (fwText) fwText.textContent = parts.join(" / ");
+        }
 
         // Update banner with upgrade details
         var banner = $("#firmware-update-banner");

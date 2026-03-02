@@ -157,8 +157,10 @@
     async function connectToDevice(address) {
         var statusDot = $("#status-dot");
         var statusText = $("#status-text");
+        var connectionPanel = $("#connection-panel");
         statusDot.className = "status-dot connecting";
         statusText.textContent = "Connecting...";
+        if (connectionPanel) connectionPanel.dataset.state = "connecting";
 
         try {
             var state = await apiPost("/api/connect", { address: address });
@@ -177,6 +179,7 @@
             ST.showError("Connection failed: " + e.message);
             statusDot.className = "status-dot";
             statusText.textContent = "Disconnected";
+            if (connectionPanel) connectionPanel.dataset.state = "disconnected";
         }
     }
 
