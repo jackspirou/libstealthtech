@@ -143,7 +143,8 @@
     // ---------- Transport abstraction ----------
 
     var transports = {};
-    var activeMode = localStorage.getItem("stealthtech-mode") || "server";
+    var defaultMode = (serverConnection && serverConnection.style.display !== "none") ? "server" : "bluetooth";
+    var activeMode = localStorage.getItem("stealthtech-mode") || defaultMode;
 
     function registerTransport(name, transport) {
         transports[name] = transport;
