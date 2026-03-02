@@ -1,0 +1,753 @@
+/* ============================================================================
+   StealthTech Remote -- CSS
+   System-aware light/dark mode with manual toggle
+   ============================================================================ */
+
+/* ---------- Custom Properties (Light Mode Defaults) ---------- */
+:root {
+    --bg-primary: #f5f5f7;
+    --bg-card: #ffffff;
+    --bg-input: #f0f0f2;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-muted: #aeaeb2;
+    --border: #d2d2d7;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --accent-active: #0062cc;
+    --danger: #ff3b30;
+    --danger-hover: #e0352b;
+    --success: #34c759;
+    --warning: #ff9f0a;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.2s ease;
+    --slider-track: #d2d2d7;
+    --slider-fill: var(--accent);
+    --slider-thumb: #ffffff;
+    --slider-thumb-border: #c7c7cc;
+    --toggle-off-bg: #e5e5ea;
+    --toggle-on-bg: var(--accent);
+    --log-bg: #f8f8fa;
+    --log-entry: #e8e8ed;
+}
+
+/* ---------- Dark Mode ---------- */
+[data-theme="dark"] {
+    --bg-primary: #1c1c1e;
+    --bg-card: #2c2c2e;
+    --bg-input: #3a3a3c;
+    --text-primary: #f5f5f7;
+    --text-secondary: #98989d;
+    --text-muted: #636366;
+    --border: #48484a;
+    --accent: #0a84ff;
+    --accent-hover: #409cff;
+    --accent-active: #0071e3;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --slider-track: #48484a;
+    --slider-thumb: #e5e5ea;
+    --slider-thumb-border: #636366;
+    --toggle-off-bg: #48484a;
+    --log-bg: #1c1c1e;
+    --log-entry: #3a3a3c;
+}
+
+/* ---------- System Dark Mode (auto) ---------- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-primary: #1c1c1e;
+        --bg-card: #2c2c2e;
+        --bg-input: #3a3a3c;
+        --text-primary: #f5f5f7;
+        --text-secondary: #98989d;
+        --text-muted: #636366;
+        --border: #48484a;
+        --accent: #0a84ff;
+        --accent-hover: #409cff;
+        --accent-active: #0071e3;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+        --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --slider-track: #48484a;
+        --slider-thumb: #e5e5ea;
+        --slider-thumb-border: #636366;
+        --toggle-off-bg: #48484a;
+        --log-bg: #1c1c1e;
+        --log-entry: #3a3a3c;
+    }
+}
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+    min-height: 100vh;
+    transition: background var(--transition), color var(--transition);
+}
+
+/* ---------- Header ---------- */
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* ---------- Connection Status ---------- */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--danger);
+    transition: background var(--transition);
+}
+
+.status-dot.connected {
+    background: var(--success);
+}
+
+.status-dot.connecting {
+    background: var(--warning);
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ---------- Theme Toggle ---------- */
+.theme-toggle {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    transition: all var(--transition);
+}
+
+.theme-toggle:hover {
+    background: var(--border);
+}
+
+/* ---------- Main Layout ---------- */
+main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ---------- Cards ---------- */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: box-shadow var(--transition), background var(--transition),
+        border-color var(--transition);
+}
+
+.card h2 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+/* ---------- Mode Tabs ---------- */
+.mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.mode-tab:hover {
+    color: var(--text-primary);
+}
+
+.mode-tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ---------- Compat Banner ---------- */
+.compat-banner {
+    background: var(--warning);
+    color: #1d1d1f;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.compat-banner p {
+    margin-bottom: 4px;
+}
+
+.compat-banner p:last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- Firmware Update Banner ---------- */
+.firmware-update-banner {
+    background: var(--warning);
+    color: #1d1d1f;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    margin-top: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.firmware-update-banner a {
+    color: #1d1d1f;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+/* ---------- Connection Card ---------- */
+.connection-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.device-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    transition: all var(--transition);
+}
+
+.device-item:hover {
+    border-color: var(--accent);
+}
+
+.device-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.device-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.device-address {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-family: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.device-rssi {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+    background: var(--accent-active);
+    transform: scale(0.97);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: var(--danger-hover);
+}
+
+.btn-small {
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.btn-small:hover {
+    background: var(--border);
+}
+
+/* ---------- Option Buttons (Input/Mode) ---------- */
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.btn-option {
+    flex: 1 1 auto;
+    min-width: 100px;
+    padding: 12px 16px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-option:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-option.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* ---------- Toggle Buttons ---------- */
+.toggle-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.toggle-row label {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.toggle-btn {
+    min-width: 64px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: var(--toggle-off-bg);
+    color: var(--text-secondary);
+}
+
+.toggle-btn[data-active="true"] {
+    background: var(--toggle-on-bg);
+    color: #fff;
+}
+
+.toggle-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ---------- Status Badge (subwoofer indicator) ---------- */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.badge-connected {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--success);
+}
+
+.badge-disconnected {
+    background: rgba(255, 59, 48, 0.15);
+    color: var(--danger);
+}
+
+/* ---------- Balance L/R labels ---------- */
+.slider-label-left, .slider-label-right {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 14px;
+    text-align: center;
+}
+
+/* ---------- Media Controls ---------- */
+.media-controls {
+    justify-content: center;
+}
+
+.media-controls .btn-option {
+    flex: 0 0 auto;
+    min-width: 60px;
+    font-size: 1.4rem;
+    padding: 12px 20px;
+}
+
+/* ---------- Sliders ---------- */
+.slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.slider-row label {
+    min-width: 70px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.slider-value {
+    min-width: 30px;
+    text-align: right;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: var(--accent);
+}
+
+/* Custom range slider styling */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 6px;
+    background: var(--slider-track);
+    border-radius: 3px;
+    outline: none;
+    transition: background var(--transition);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--slider-thumb);
+    border: 2px solid var(--slider-thumb-border);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    transition: all var(--transition);
+}
+
+input[type="range"]:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+    cursor: not-allowed;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    border-color: var(--accent);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: var(--slider-thumb);
+    border: 2px solid var(--slider-thumb-border);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    transition: all var(--transition);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    border-color: var(--accent);
+}
+
+input[type="range"]::-moz-range-track {
+    height: 6px;
+    background: var(--slider-track);
+    border-radius: 3px;
+}
+
+/* ---------- Notification Log ---------- */
+.log-card {
+    margin-top: 8px;
+}
+
+.log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.log-header h2 {
+    margin-bottom: 0;
+}
+
+.log-container {
+    background: var(--log-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 8px;
+    font-family: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+}
+
+.log-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.log-entry {
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    word-break: break-all;
+}
+
+.log-entry:nth-child(odd) {
+    background: var(--log-entry);
+}
+
+.log-time {
+    color: var(--text-muted);
+    margin-right: 8px;
+}
+
+.log-message {
+    color: var(--text-primary);
+}
+
+/* ---------- Scanning indicator ---------- */
+.scanning-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---------- Error toast ---------- */
+.error-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--danger);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.error-toast.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 520px) {
+    header {
+        padding: 12px 16px;
+    }
+
+    header h1 {
+        font-size: 1.15rem;
+    }
+
+    .subtitle {
+        display: none;
+    }
+
+    main {
+        padding: 12px 10px 32px;
+        gap: 12px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .btn-option {
+        min-width: 80px;
+        padding: 10px 12px;
+        font-size: 0.82rem;
+    }
+
+    .slider-row label {
+        min-width: 55px;
+        font-size: 0.82rem;
+    }
+
+    .connection-controls {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 360px) {
+    .button-group {
+        flex-direction: column;
+    }
+
+    .btn-option {
+        min-width: auto;
+    }
+}

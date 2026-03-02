@@ -1,0 +1,22 @@
+[package]
+name = "libstealthtech-wasm"
+description = "WebAssembly bindings for the StealthTech BLE protocol"
+publish = false
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+libstealthtech-protocol.workspace = true
+wasm-bindgen.workspace = true
+serde-wasm-bindgen.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid = { workspace = true, features = ["js"] }

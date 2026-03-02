@@ -1,0 +1,22 @@
+[package]
+name = "libstealthtech-bridge"
+description = "Native language bindings (Swift/Kotlin) for StealthTech via uniffi"
+publish = false
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+libstealthtech-core.workspace = true
+libstealthtech-protocol.workspace = true
+uniffi.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true

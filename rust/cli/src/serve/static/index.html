@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StealthTech Remote</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0071e3" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0a84ff" media="(prefers-color-scheme: dark)">
+    <meta name="mobile-web-app-capable" content="yes">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>StealthTech</h1>
+            <span class="subtitle">Sound + Charge</span>
+        </div>
+        <div class="header-right">
+            <div class="connection-status" id="connection-status" aria-live="polite">
+                <span class="status-dot" id="status-dot"></span>
+                <span class="status-text" id="status-text">Disconnected</span>
+            </div>
+            <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+                <span id="theme-icon">&#9788;</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Connection Panel -->
+        <section class="card connection-card" id="connection-panel">
+            <h2>Connection</h2>
+            <div class="mode-tabs">
+                <button class="mode-tab active" data-mode="server">Server BLE</button>
+                <button class="mode-tab" data-mode="bluetooth">Web Bluetooth</button>
+            </div>
+            <div id="server-connection" class="connection-mode">
+                <div class="connection-controls">
+                    <button class="btn btn-primary" id="scan-btn">Scan for Devices</button>
+                    <button class="btn btn-danger" id="disconnect-btn" disabled>Disconnect</button>
+                </div>
+                <div class="device-list" id="device-list"></div>
+            </div>
+            <div id="bluetooth-connection" class="connection-mode" style="display:none">
+                <div class="compat-banner" id="compat-banner" style="display:none"></div>
+                <div class="connection-controls">
+                    <button class="btn btn-primary" id="connect-btn">Connect</button>
+                    <button class="btn btn-primary" id="reconnect-btn" style="display:none">Reconnect</button>
+                    <button class="btn btn-danger" id="bt-disconnect-btn" disabled>Disconnect</button>
+                </div>
+            </div>
+            <div id="firmware-info" class="device-list" style="display:none">
+                <div class="device-item">
+                    <div class="device-info">
+                        <span class="device-name" id="device-name">Firmware</span>
+                        <span class="device-address" id="firmware-version"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="firmware-update-banner" id="firmware-update-banner" style="display:none"></div>
+        </section>
+
+        <!-- Power & Mute -->
+        <section class="card" id="system-card">
+            <h2>System</h2>
+            <div class="toggle-group">
+                <div class="toggle-row">
+                    <label>Power</label>
+                    <button class="toggle-btn" id="power-btn" data-active="false" aria-pressed="false">OFF</button>
+                </div>
+                <div class="toggle-row">
+                    <label>Mute</label>
+                    <button class="toggle-btn" id="mute-btn" data-active="false" aria-pressed="false">OFF</button>
+                </div>
+                <div class="toggle-row">
+                    <label>Quiet Couch</label>
+                    <button class="toggle-btn" id="quiet-couch-btn" data-active="false" aria-pressed="false">OFF</button>
+                </div>
+                <div class="toggle-row">
+                    <label>Surround</label>
+                    <button class="toggle-btn" id="surround-btn" data-active="false" aria-pressed="false">OFF</button>
+                </div>
+                <div class="toggle-row" id="subwoofer-row" style="display:none">
+                    <label>Subwoofer</label>
+                    <span class="status-badge" id="subwoofer-status">--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Couch Shape -->
+        <section class="card" id="shape-card">
+            <h2>Couch Shape</h2>
+            <div class="button-group">
+                <button class="btn btn-option" data-shape="straight">Straight</button>
+                <button class="btn btn-option" data-shape="lshape">L-Shape</button>
+                <button class="btn btn-option" data-shape="ushape">U-Shape</button>
+                <button class="btn btn-option" data-shape="pit">Pit</button>
+            </div>
+        </section>
+
+        <!-- Volume Controls -->
+        <section class="card" id="volume-card">
+            <h2>Volume</h2>
+            <div class="slider-group">
+                <div class="slider-row">
+                    <label for="volume-slider">Master</label>
+                    <input type="range" id="volume-slider" min="0" max="36" value="0" aria-label="Master volume">
+                    <span class="slider-value" id="volume-value">0%</span>
+                </div>
+                <div class="slider-row">
+                    <label for="center-volume-slider">Center</label>
+                    <input type="range" id="center-volume-slider" min="0" max="30" value="0" aria-label="Center volume">
+                    <span class="slider-value" id="center-volume-value">0%</span>
+                </div>
+                <div class="slider-row">
+                    <label for="rear-volume-slider">Rear</label>
+                    <input type="range" id="rear-volume-slider" min="0" max="30" value="0" aria-label="Rear volume">
+                    <span class="slider-value" id="rear-volume-value">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- EQ Controls -->
+        <section class="card" id="eq-card">
+            <h2>Equalizer</h2>
+            <div class="slider-group">
+                <div class="slider-row">
+                    <label for="bass-slider">Bass</label>
+                    <input type="range" id="bass-slider" min="0" max="20" value="0" aria-label="Bass level">
+                    <span class="slider-value" id="bass-value">0%</span>
+                </div>
+                <div class="slider-row">
+                    <label for="treble-slider">Treble</label>
+                    <input type="range" id="treble-slider" min="0" max="20" value="0" aria-label="Treble level">
+                    <span class="slider-value" id="treble-value">0%</span>
+                </div>
+                <div class="slider-row">
+                    <label for="balance-slider">Balance</label>
+                    <span class="slider-label-left">L</span>
+                    <input type="range" id="balance-slider" min="0" max="100" value="50" aria-label="Left/right balance">
+                    <span class="slider-label-right">R</span>
+                    <span class="slider-value" id="balance-value">50%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Input Source -->
+        <section class="card" id="input-card">
+            <h2>Input Source</h2>
+            <div class="button-group">
+                <button class="btn btn-option" data-input="hdmi">HDMI</button>
+                <button class="btn btn-option" data-input="bluetooth">Bluetooth</button>
+                <button class="btn btn-option" data-input="aux">AUX</button>
+                <button class="btn btn-option" data-input="optical">Optical</button>
+            </div>
+        </section>
+
+        <!-- Media Controls (shown only for Bluetooth input) -->
+        <section class="card" id="media-card" style="display:none">
+            <h2>Media Controls</h2>
+            <div class="button-group media-controls">
+                <button class="btn btn-option" id="skip-back-btn" aria-label="Previous track">&#9198;</button>
+                <button class="btn btn-option" id="play-pause-btn" aria-label="Play/Pause">&#9199;</button>
+                <button class="btn btn-option" id="skip-fwd-btn" aria-label="Next track">&#9197;</button>
+            </div>
+        </section>
+
+        <!-- Sound Mode -->
+        <section class="card" id="mode-card">
+            <h2>Sound Mode</h2>
+            <div class="button-group">
+                <button class="btn btn-option" data-mode="movies" title="Enhanced surround and bass for movie soundtracks">Movies</button>
+                <button class="btn btn-option" data-mode="music" title="Balanced stereo optimized for music playback">Music</button>
+                <button class="btn btn-option" data-mode="tv" title="Balanced mode for TV shows and streaming">TV</button>
+                <button class="btn btn-option" data-mode="news" title="Enhanced dialog clarity for speech-heavy content">News</button>
+                <button class="btn btn-option" data-mode="manual" title="Uses your custom bass, treble, and balance settings">Manual</button>
+            </div>
+        </section>
+
+        <!-- Notification Log -->
+        <section class="card log-card" id="log-card">
+            <div class="log-header">
+                <h2>Live Notifications</h2>
+                <button class="btn btn-small" id="clear-log-btn">Clear</button>
+            </div>
+            <div class="log-container" id="log-container">
+                <div class="log-empty" id="log-empty">No notifications yet. Connect to a device to begin.</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="shared.js"></script>
+    <script src="app.js"></script>
+    <script type="module" src="bluetooth.js"></script>
+</body>
+</html>
