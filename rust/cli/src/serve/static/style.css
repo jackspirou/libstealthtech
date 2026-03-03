@@ -917,20 +917,114 @@ input[type="range"]::-moz-range-track {
     border-radius: 3px;
 }
 
+/* ---------- Card Header / Collapse / Drag ---------- */
+.card-header {
+    display: flex;
+    align-items: center;
+    margin: -20px -20px 0;
+    padding: 20px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.card.collapsed .card-header {
+    margin-bottom: -20px;
+    border-radius: var(--radius);
+}
+
+.card-header h2 {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -10px 4px -10px -10px;
+    cursor: grab;
+    color: var(--text-muted);
+    font-size: 1rem;
+    letter-spacing: -2px;
+    touch-action: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+[data-pinned="true"] .drag-handle {
+    visibility: hidden;
+}
+
+.chevron {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: rotate(45deg);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.card.collapsed .chevron {
+    transform: rotate(-45deg);
+}
+
+.card-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.3s ease;
+    margin-top: 20px;
+}
+
+.card.collapsed .card-body {
+    max-height: 0 !important;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.log-clear-btn {
+    margin-left: auto;
+    margin-right: 4px;
+}
+
+/* Drag states */
+.card.dragging {
+    position: fixed;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    opacity: 0.92;
+    pointer-events: none;
+    transition: none;
+}
+
+.drop-indicator {
+    position: fixed;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    z-index: 999;
+    pointer-events: none;
+    display: none;
+}
+
+.card-placeholder {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    box-sizing: border-box;
+}
+
 /* ---------- Notification Log ---------- */
 .log-card {
     margin-top: 8px;
-}
-
-.log-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.log-header h2 {
-    margin-bottom: 0;
 }
 
 .log-container {
@@ -1049,6 +1143,19 @@ input[type="range"]::-moz-range-track {
 
     .card {
         padding: 16px;
+    }
+
+    .card-header {
+        margin: -16px -16px 0;
+        padding: 16px;
+    }
+
+    .card.collapsed .card-header {
+        margin-bottom: -16px;
+    }
+
+    .card-body {
+        margin-top: 16px;
     }
 
     .btn-option {

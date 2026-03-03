@@ -933,6 +933,310 @@
 
     renderProfiles();
 
+    // ---------- Card Collapse ----------
+
+    var COLLAPSED_KEY = "stealthtech-card-collapsed";
+
+    function loadCollapsed() {
+        try { return JSON.parse(localStorage.getItem(COLLAPSED_KEY)) || {}; } catch (e) { return {}; }
+    }
+
+    function saveCollapsed(obj) {
+        localStorage.setItem(COLLAPSED_KEY, JSON.stringify(obj));
+    }
+
+    function setCardCollapsed(card, collapsed, animate) {
+        var body = card.querySelector(".card-body");
+        var header = card.querySelector(".card-header");
+        if (!body || !header) return;
+
+        if (collapsed) {
+            if (animate) {
+                body.style.maxHeight = body.scrollHeight + "px";
+                // Force reflow so the browser registers the start value
+                body.offsetHeight; // eslint-disable-line no-unused-expressions
+                body.style.maxHeight = "0";
+            }
+            card.classList.add("collapsed");
+            header.setAttribute("aria-expanded", "false");
+        } else {
+            card.classList.remove("collapsed");
+            header.setAttribute("aria-expanded", "true");
+            if (animate) {
+                body.style.maxHeight = body.scrollHeight + "px";
+                var onEnd = function () {
+                    body.removeEventListener("transitionend", onEnd);
+                    if (!card.classList.contains("collapsed")) {
+                        body.style.maxHeight = "";
+                    }
+                };
+                body.addEventListener("transitionend", onEnd);
+            } else {
+                body.style.maxHeight = "";
+            }
+        }
+
+        var id = card.dataset.cardId;
+        if (id) {
+            var state = loadCollapsed();
+            if (collapsed) {
+                state[id] = true;
+            } else {
+                delete state[id];
+            }
+            saveCollapsed(state);
+        }
+    }
+
+    function initCollapse() {
+        var state = loadCollapsed();
+
+        $$("[data-card-id]").forEach(function (card) {
+            var id = card.dataset.cardId;
+            if (state[id]) {
+                setCardCollapsed(card, true, false);
+            }
+        });
+
+        $("main").addEventListener("click", function (e) {
+            var header = e.target.closest(".card-header");
+            if (!header) return;
+            if (e.target.closest(".drag-handle")) return;
+            if (e.target.closest(".log-clear-btn")) return;
+            var card = header.closest("[data-card-id]");
+            if (!card) return;
+            setCardCollapsed(card, !card.classList.contains("collapsed"), true);
+        });
+
+        $("main").addEventListener("keydown", function (e) {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            var header = e.target.closest(".card-header");
+            if (!header || e.target.closest(".drag-handle")) return;
+            e.preventDefault();
+            var card = header.closest("[data-card-id]");
+            if (!card) return;
+            setCardCollapsed(card, !card.classList.contains("collapsed"), true);
+        });
+    }
+
+    // ---------- Card Drag-and-Drop ----------
+
+    var ORDER_KEY = "stealthtech-card-order";
+    var DEFAULT_ORDER = ["connection", "system", "input", "media", "mode", "volume", "eq", "shape", "log"];
+
+    function loadOrder() {
+        try { return JSON.parse(localStorage.getItem(ORDER_KEY)); } catch (e) { return null; }
+    }
+
+    function saveOrder(order) {
+        localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+    }
+
+    function applyOrder(order) {
+        var main = $("main");
+        if (!main) return;
+
+        // Build lookup of existing cards
+        var cards = {};
+        $$("[data-card-id]").forEach(function (card) {
+            cards[card.dataset.cardId] = card;
+        });
+
+        // Ensure connection is always first
+        var sorted = ["connection"];
+        order.forEach(function (id) {
+            if (id !== "connection" && cards[id] && sorted.indexOf(id) === -1) {
+                sorted.push(id);
+            }
+        });
+        // Append any cards not in the saved order
+        DEFAULT_ORDER.forEach(function (id) {
+            if (sorted.indexOf(id) === -1 && cards[id]) {
+                sorted.push(id);
+            }
+        });
+
+        sorted.forEach(function (id) {
+            if (cards[id]) main.appendChild(cards[id]);
+        });
+    }
+
+    function getCurrentOrder() {
+        var order = [];
+        $$("[data-card-id]").forEach(function (card) {
+            order.push(card.dataset.cardId);
+        });
+        return order;
+    }
+
+    function initDragAndDrop() {
+        var main = $("main");
+        if (!main) return;
+
+        var dropIndicator = document.createElement("div");
+        dropIndicator.className = "drop-indicator";
+        document.body.appendChild(dropIndicator);
+
+        var dragging = null;
+        var placeholder = null;
+        var startX = 0;
+        var startY = 0;
+        var offsetX = 0;
+        var offsetY = 0;
+        var dragStarted = false;
+        var DEAD_ZONE = 5;
+
+        main.addEventListener("pointerdown", function (e) {
+            var handle = e.target.closest(".drag-handle");
+            if (!handle) return;
+            var card = handle.closest("[data-card-id]");
+            if (!card || card.dataset.pinned === "true") return;
+
+            e.preventDefault();
+            handle.setPointerCapture(e.pointerId);
+
+            dragging = card;
+            startX = e.clientX;
+            startY = e.clientY;
+            dragStarted = false;
+
+            var rect = card.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+
+            var onMove = function (ev) {
+                if (!dragging) return;
+
+                if (!dragStarted) {
+                    var dx = ev.clientX - startX;
+                    var dy = ev.clientY - startY;
+                    if (Math.sqrt(dx * dx + dy * dy) < DEAD_ZONE) return;
+                    dragStarted = true;
+
+                    // Create placeholder
+                    var r = dragging.getBoundingClientRect();
+                    placeholder = document.createElement("div");
+                    placeholder.className = "card-placeholder";
+                    placeholder.style.height = r.height + "px";
+                    dragging.parentNode.insertBefore(placeholder, dragging);
+
+                    // Make card fixed
+                    dragging.classList.add("dragging");
+                    dragging.style.width = r.width + "px";
+                    dragging.style.height = r.height + "px";
+                }
+
+                dragging.style.left = (ev.clientX - offsetX) + "px";
+                dragging.style.top = (ev.clientY - offsetY) + "px";
+
+                // Calculate drop position
+                var cards = [];
+                $$("[data-card-id]").forEach(function (c) {
+                    if (c === dragging || c.dataset.pinned === "true") return;
+                    if (c.style.display === "none") return;
+                    var cr = c.getBoundingClientRect();
+                    cards.push({ el: c, mid: cr.top + cr.height / 2 });
+                });
+
+                // Also include placeholder in positioning
+                var insertBefore = null;
+                for (var i = 0; i < cards.length; i++) {
+                    if (ev.clientY < cards[i].mid) {
+                        insertBefore = cards[i].el;
+                        break;
+                    }
+                }
+
+                // Show drop indicator
+                if (insertBefore) {
+                    var ir = insertBefore.getBoundingClientRect();
+                    var mainR = main.getBoundingClientRect();
+                    dropIndicator.style.display = "block";
+                    dropIndicator.style.top = (ir.top - 2) + "px";
+                    dropIndicator.style.left = mainR.left + "px";
+                    dropIndicator.style.width = mainR.width + "px";
+                } else if (cards.length > 0) {
+                    var last = cards[cards.length - 1].el.getBoundingClientRect();
+                    var mainR2 = main.getBoundingClientRect();
+                    dropIndicator.style.display = "block";
+                    dropIndicator.style.top = (last.bottom + 2) + "px";
+                    dropIndicator.style.left = mainR2.left + "px";
+                    dropIndicator.style.width = mainR2.width + "px";
+                }
+            };
+
+            var onUp = function () {
+                if (!dragging) return;
+
+                handle.removeEventListener("pointermove", onMove);
+                handle.removeEventListener("pointerup", onUp);
+                handle.removeEventListener("pointercancel", onUp);
+
+                if (dragStarted) {
+                    // Find drop target
+                    var cards = [];
+                    $$("[data-card-id]").forEach(function (c) {
+                        if (c === dragging || c.dataset.pinned === "true") return;
+                        if (c.style.display === "none" && c !== dragging) return;
+                        var cr = c.getBoundingClientRect();
+                        cards.push({ el: c, mid: cr.top + cr.height / 2 });
+                    });
+
+                    var insertBefore = null;
+                    var lastPointerY = parseInt(dragging.style.top, 10) + offsetY;
+                    for (var i = 0; i < cards.length; i++) {
+                        if (lastPointerY < cards[i].mid) {
+                            insertBefore = cards[i].el;
+                            break;
+                        }
+                    }
+
+                    // Remove placeholder
+                    if (placeholder && placeholder.parentNode) {
+                        placeholder.parentNode.removeChild(placeholder);
+                    }
+
+                    // Reset card styles
+                    dragging.classList.remove("dragging");
+                    dragging.style.width = "";
+                    dragging.style.height = "";
+                    dragging.style.left = "";
+                    dragging.style.top = "";
+                    dragging.style.position = "";
+
+                    // Insert at new position
+                    if (insertBefore) {
+                        main.insertBefore(dragging, insertBefore);
+                    } else {
+                        main.appendChild(dragging);
+                    }
+
+                    dropIndicator.style.display = "none";
+                    saveOrder(getCurrentOrder());
+                }
+
+                placeholder = null;
+                dragging = null;
+                dragStarted = false;
+            };
+
+            handle.addEventListener("pointermove", onMove);
+            handle.addEventListener("pointerup", onUp);
+            handle.addEventListener("pointercancel", onUp);
+        });
+    }
+
+    // ---------- Card Layout Init ----------
+
+    function initCardLayout() {
+        var savedOrder = loadOrder();
+        if (savedOrder) applyOrder(savedOrder);
+        initCollapse();
+        initDragAndDrop();
+    }
+
+    initCardLayout();
+
     // ---------- Public API ----------
 
     window.StealthTech = {
@@ -950,6 +1254,14 @@
             localStorage.removeItem(TIP_CLICKED_KEY);
             hideTip();
             console.log("Tip counter reset");
+        },
+        resetLayout: function () {
+            localStorage.removeItem(COLLAPSED_KEY);
+            localStorage.removeItem(ORDER_KEY);
+            applyOrder(DEFAULT_ORDER);
+            $$("[data-card-id]").forEach(function (card) {
+                setCardCollapsed(card, false, false);
+            });
         },
     };
 })();

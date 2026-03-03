@@ -78,8 +78,13 @@
 
     <main>
         <!-- Connection Panel -->
-        <section class="card connection-card" id="connection-panel" data-state="disconnected">
-            <h2>Connection</h2>
+        <section class="card connection-card" id="connection-panel" data-card-id="connection" data-pinned="true" data-state="disconnected">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>Connection</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="mode-tabs">
                 <button class="mode-tab active" data-mode="server">Server BLE</button>
                 <button class="mode-tab" data-mode="bluetooth">Web Bluetooth</button>
@@ -123,11 +128,17 @@
                 </div>
             </div>
             <div class="firmware-update-banner" id="firmware-update-banner" style="display:none"></div>
+            </div>
         </section>
 
         <!-- Power & Mute -->
-        <section class="card" id="system-card">
-            <h2>System</h2>
+        <section class="card" id="system-card" data-card-id="system">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>System</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="toggle-group">
                 <div class="toggle-row">
                     <label>Power</label>
@@ -146,32 +157,50 @@
                     <span class="status-badge" id="subwoofer-status">--</span>
                 </div>
             </div>
+            </div>
         </section>
 
         <!-- Input Source -->
-        <section class="card" id="input-card">
-            <h2>Input Source</h2>
+        <section class="card" id="input-card" data-card-id="input">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>Input Source</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="button-group">
                 <button class="btn btn-option" data-input="hdmi">HDMI</button>
                 <button class="btn btn-option" data-input="bluetooth">Bluetooth</button>
                 <button class="btn btn-option" data-input="aux">AUX</button>
                 <button class="btn btn-option" data-input="optical">Optical</button>
             </div>
+            </div>
         </section>
 
         <!-- Media Controls (shown only for Bluetooth input) -->
-        <section class="card" id="media-card" style="display:none">
-            <h2>Media Controls</h2>
+        <section class="card" id="media-card" data-card-id="media" style="display:none">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>Media Controls</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="button-group media-controls">
                 <button class="btn btn-option" id="skip-back-btn" aria-label="Previous track">&#9198;</button>
                 <button class="btn btn-option" id="play-pause-btn" aria-label="Play/Pause">&#9199;</button>
                 <button class="btn btn-option" id="skip-fwd-btn" aria-label="Next track">&#9197;</button>
             </div>
+            </div>
         </section>
 
         <!-- Sound Mode -->
-        <section class="card" id="mode-card">
-            <h2>Sound Mode</h2>
+        <section class="card" id="mode-card" data-card-id="mode">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>Sound Mode</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="button-group">
                 <button class="btn btn-option" data-mode="movies" title="Enhanced bass and spatial audio for movie soundtracks">Movies</button>
                 <button class="btn btn-option" data-mode="music" title="Balanced stereo optimized for music playback">Music</button>
@@ -185,11 +214,17 @@
                 <button class="btn btn-primary btn-sm" id="save-profile-btn">Save</button>
             </div>
             <div class="profile-hint" id="profile-hint">Save your current EQ settings as a reusable profile.</div>
+            </div>
         </section>
 
         <!-- Volume Controls -->
-        <section class="card" id="volume-card">
-            <h2>Volume</h2>
+        <section class="card" id="volume-card" data-card-id="volume">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>Volume</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="slider-group">
                 <div class="slider-row">
                     <label for="volume-slider">Master</label>
@@ -207,11 +242,17 @@
                     <span class="slider-value" id="rear-volume-value">0%</span>
                 </div>
             </div>
+            </div>
         </section>
 
         <!-- EQ Controls -->
-        <section class="card" id="eq-card">
-            <h2>Equalizer</h2>
+        <section class="card" id="eq-card" data-card-id="eq">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>Equalizer</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="slider-group">
                 <div class="slider-row">
                     <label for="bass-slider">Bass</label>
@@ -231,27 +272,38 @@
                     <span class="slider-value" id="balance-value">50%</span>
                 </div>
             </div>
+            </div>
         </section>
 
         <!-- Couch Shape -->
-        <section class="card" id="shape-card">
-            <h2>Couch Shape</h2>
+        <section class="card" id="shape-card" data-card-id="shape">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
+                <h2>Couch Shape</h2>
+                <span class="chevron" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="button-group">
                 <button class="btn btn-option" data-shape="straight">Straight</button>
                 <button class="btn btn-option" data-shape="lshape">L-Shape</button>
                 <button class="btn btn-option" data-shape="ushape">U-Shape</button>
                 <button class="btn btn-option" data-shape="pit">Pit</button>
             </div>
+            </div>
         </section>
 
         <!-- Notification Log -->
-        <section class="card log-card" id="log-card">
-            <div class="log-header">
+        <section class="card log-card" id="log-card" data-card-id="log">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="drag-handle" aria-hidden="true">&#x2807;&#x2807;</span>
                 <h2>Live Notifications</h2>
-                <button class="btn btn-small" id="clear-log-btn">Clear</button>
+                <button class="btn btn-small log-clear-btn" id="clear-log-btn">Clear</button>
+                <span class="chevron" aria-hidden="true"></span>
             </div>
-            <div class="log-container" id="log-container">
-                <div class="log-empty" id="log-empty">No notifications yet. Connect to a device to begin.</div>
+            <div class="card-body">
+                <div class="log-container" id="log-container">
+                    <div class="log-empty" id="log-empty">No notifications yet. Connect to a device to begin.</div>
+                </div>
             </div>
         </section>
     </main>
