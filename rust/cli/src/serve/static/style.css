@@ -520,6 +520,23 @@ main {
     max-width: 320px;
 }
 
+.connection-controls .btn-primary {
+    padding: 14px 24px;
+    font-size: 1rem;
+    border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
+}
+
+.connection-controls .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 4px 16px rgba(0, 113, 227, 0.4);
+    transform: translateY(-1px);
+}
+
+.connection-controls .btn-primary:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 113, 227, 0.3);
+}
+
 .divider-or {
     display: flex;
     align-items: center;
