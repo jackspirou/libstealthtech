@@ -38,10 +38,7 @@
 
     // Profile elements
     var profileButtonsContainer = $("#profile-buttons");
-    var profileNameInput = $("#profile-name-input");
-    var saveProfileBtn = $("#save-profile-btn");
-    var profileHint = $("#profile-hint");
-    var profileSaveRow = $("#profile-save-row");
+    var newProfileBtn = $("#new-profile-btn");
 
     // ---------- Percentage display helper ----------
 
@@ -51,7 +48,7 @@
     }
 
     function setSlider(key, value) {
-        if (sliders[key]._dragging) return;
+        if (sliders[key]._dragging || sliders[key]._pending) return;
         sliders[key].el.value = value;
         sliders[key].val.textContent = toPercent(value, parseInt(sliders[key].el.max, 10));
     }
@@ -312,8 +309,7 @@
         $$("[data-input]").forEach(function (btn) { btn.disabled = !enabled; });
         $$(".btn-option[data-mode]").forEach(function (btn) { btn.disabled = !enabled; });
         $$(".profile-btn-wrap .btn-option").forEach(function (btn) { btn.disabled = !enabled; });
-        if (profileNameInput) profileNameInput.disabled = !enabled;
-        if (saveProfileBtn) saveProfileBtn.disabled = !enabled;
+        if (newProfileBtn) newProfileBtn.disabled = !enabled;
         $$("[data-shape]").forEach(function (btn) { btn.disabled = !enabled; });
         var mediaBtn = $("#play-pause-btn");
         if (mediaBtn) mediaBtn.disabled = !enabled;
@@ -474,13 +470,7 @@
             btn.classList.toggle("active", normalizedMode === modeMap[btn.dataset.mode]);
         });
 
-        // Clear active profile when a built-in mode is reported
-        if (normalizedMode && normalizedMode !== "Manual" && activeProfileName !== null && !applyingProfile) {
-            activeProfileName = null;
-            renderProfiles(); // calls updateSaveRowVisibility() internally
-        } else {
-            updateSaveRowVisibility();
-        }
+        updateSaveRowVisibility();
 
         // Config shape buttons
         if (state.config_shape != null) {
@@ -586,12 +576,15 @@
             var t = getActiveTransport();
             if (!t || !t.send) return;
 
+            slider._pending = true;
             t.send(key, value).then(function (state) {
                 slider._committed = value;
+                slider._pending = false;
                 if (state) updateUI(state);
-                if (key !== "volume") autoUpdateActiveProfile();
+                autoUpdateActiveProfile();
                 trackSuccess();
             }).catch(function (e) {
+                slider._pending = false;
                 if (prev != null) {
                     slider.el.value = prev;
                     slider.val.textContent = toPercent(prev, parseInt(slider.el.max, 10));
@@ -645,6 +638,7 @@
 
             t.send("input", input).then(function (state) {
                 if (state) updateUI(state);
+                autoUpdateActiveProfile();
                 trackSuccess();
             }).catch(function (e) {
                 $$("[data-input]").forEach(function (b) { b.classList.remove("active"); });
@@ -667,19 +661,14 @@
             $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
             if (!wasActive) btn.classList.add("active");
 
-            // Clear active profile when selecting a built-in mode
-            if (!wasActive) {
-                activeProfileName = null;
-                renderProfiles(); // calls updateSaveRowVisibility() internally
-            } else {
-                updateSaveRowVisibility();
-            }
+            updateSaveRowVisibility();
 
             var t = getActiveTransport();
             if (!t || !t.send) return;
 
             t.send("mode", mode).then(function (state) {
                 if (state) updateUI(state);
+                autoUpdateActiveProfile();
                 trackSuccess();
             }).catch(function (e) {
                 $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
@@ -809,16 +798,12 @@
     var applyingProfile = false;
 
     function updateSaveRowVisibility() {
-        if (!profileSaveRow) return;
-        var hasActiveMode = !!$(".btn-option[data-mode].active");
-        var hasActiveProfile = activeProfileName !== null;
-        var showSave = !hasActiveMode && !hasActiveProfile;
-        profileSaveRow.style.display = showSave ? "" : "none";
-        if (profileHint) profileHint.style.display = showSave && loadProfiles().length === 0 ? "" : "none";
+        if (!newProfileBtn) return;
+        newProfileBtn.style.display = activeProfileName ? "none" : "";
     }
 
     function autoUpdateActiveProfile() {
-        if (!activeProfileName) return;
+        if (!activeProfileName || applyingProfile) return;
         var profiles = loadProfiles();
         for (var i = 0; i < profiles.length; i++) {
             if (profiles[i].name === activeProfileName) {
@@ -841,6 +826,92 @@
 
     function saveProfilesToStorage(profiles) {
         localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+    }
+
+    var _popoverOutsideClick = null;
+
+    function closeProfilePopover() {
+        var existing = $(".profile-popover");
+        if (existing) existing.remove();
+        if (_popoverOutsideClick) {
+            document.removeEventListener("click", _popoverOutsideClick);
+            _popoverOutsideClick = null;
+        }
+    }
+
+    function showProfilePopover(menuBtn, profileName) {
+        closeProfilePopover();
+        var pop = document.createElement("div");
+        pop.className = "profile-popover";
+
+        var editBtn = document.createElement("button");
+        editBtn.className = "profile-popover-action";
+        editBtn.textContent = "Edit Name";
+        editBtn.addEventListener("click", function () {
+            closeProfilePopover();
+            renameProfile(profileName);
+        });
+
+        var delBtn = document.createElement("button");
+        delBtn.className = "profile-popover-action danger";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", function () {
+            closeProfilePopover();
+            deleteProfile(profileName);
+        });
+
+        pop.appendChild(editBtn);
+        pop.appendChild(delBtn);
+        menuBtn.parentNode.appendChild(pop);
+
+        function onOutsideClick(e) {
+            if (!pop.contains(e.target) && e.target !== menuBtn) {
+                closeProfilePopover();
+            }
+        }
+        _popoverOutsideClick = onOutsideClick;
+        setTimeout(function () {
+            document.addEventListener("click", onOutsideClick);
+        }, 0);
+    }
+
+    function renameProfile(oldName) {
+        var m = showModal(
+            '<h3>Rename Profile</h3>' +
+            '<input type="text" class="profile-name-input" id="rename-profile-input" ' +
+                'value="' + escapeHtml(oldName) + '" maxlength="20" aria-label="Profile name">' +
+            '<div class="confirm-actions" style="margin-top:16px">' +
+                '<button class="btn btn-secondary btn-sm confirm-no">Cancel</button>' +
+                '<button class="btn btn-primary btn-sm confirm-yes">Save</button>' +
+            '</div>'
+        );
+        if (!m) return;
+        var input = m.overlay.querySelector("#rename-profile-input");
+        input.focus();
+        input.select();
+        m.overlay.querySelector(".confirm-no").addEventListener("click", m.close);
+        m.overlay.querySelector(".confirm-yes").addEventListener("click", function () {
+            var newName = input.value.trim();
+            if (!newName) { showError("Enter a profile name"); return; }
+            if (newName === oldName) { m.close(); return; }
+            var profiles = loadProfiles();
+            for (var i = 0; i < profiles.length; i++) {
+                if (profiles[i].name === newName) {
+                    showError("A profile named \"" + newName + "\" already exists");
+                    return;
+                }
+            }
+            for (var i = 0; i < profiles.length; i++) {
+                if (profiles[i].name === oldName) {
+                    profiles[i].name = newName;
+                    break;
+                }
+            }
+            saveProfilesToStorage(profiles);
+            if (activeProfileName === oldName) activeProfileName = newName;
+            renderProfiles();
+            m.close();
+        });
     }
 
     function renderProfiles() {
@@ -869,17 +940,17 @@
                 btn.classList.add("active");
             }
 
-            var del = document.createElement("button");
-            del.className = "profile-delete-btn";
-            del.textContent = "\u00d7";
-            del.title = "Delete " + p.name;
-            del.addEventListener("click", function (e) {
+            var menuBtn = document.createElement("button");
+            menuBtn.className = "profile-menu-btn";
+            menuBtn.textContent = "\u22ee";
+            menuBtn.title = "Profile options";
+            menuBtn.addEventListener("click", function (e) {
                 e.stopPropagation();
-                deleteProfile(p.name);
+                showProfilePopover(menuBtn, p.name);
             });
 
             wrap.appendChild(btn);
-            wrap.appendChild(del);
+            wrap.appendChild(menuBtn);
             profileButtonsContainer.appendChild(wrap);
         });
 
@@ -887,7 +958,12 @@
     }
 
     function buildProfileFromSliders() {
+        var activeModeBtn = $(".btn-option[data-mode].active");
+        var activeInputBtn = $("[data-input].active");
         return {
+            volume: parseInt(sliders.volume.el.value, 10),
+            soundMode: activeModeBtn ? activeModeBtn.dataset.mode : "manual",
+            input: activeInputBtn ? activeInputBtn.dataset.input : null,
             bass: parseInt(sliders.bass.el.value, 10),
             treble: parseInt(sliders.treble.el.value, 10),
             balance: parseInt(sliders.balance.el.value, 10),
@@ -903,15 +979,23 @@
 
         applyingProfile = true;
         activeProfileName = profile.name;
-
-        // Clear mode buttons — profiles always use Manual mode
-        $$(".btn-option[data-mode]").forEach(function (b) {
-            b.classList.remove("active");
-        });
         renderProfiles();
 
-        // Send manual mode first, then EQ values sequentially
-        t.send("mode", "manual").then(function () {
+        // Build command chain: input, mode, volume, then EQ values
+        var chain = Promise.resolve();
+
+        if (profile.input) {
+            chain = chain.then(function () { return t.send("input", profile.input); });
+        }
+
+        var mode = profile.soundMode || "manual";
+        chain = chain.then(function () { return t.send("mode", mode); });
+
+        if (profile.volume != null) {
+            chain = chain.then(function () { return t.send("volume", profile.volume); });
+        }
+
+        chain.then(function () {
             return t.send("bass", profile.bass);
         }).then(function () {
             return t.send("treble", profile.treble);
@@ -922,12 +1006,26 @@
         }).then(function () {
             return t.send("rear-volume", profile.rearVolume);
         }).then(function () {
-            // Update sliders to reflect profile values
+            // Update UI to reflect profile values
+            if (profile.volume != null) setSlider("volume", profile.volume);
             setSlider("bass", profile.bass);
             setSlider("treble", profile.treble);
             setSlider("balance", profile.balance);
             setSlider("center-volume", profile.centerVolume);
             setSlider("rear-volume", profile.rearVolume);
+
+            // Update mode buttons
+            $$(".btn-option[data-mode]").forEach(function (b) {
+                b.classList.toggle("active", b.dataset.mode === mode);
+            });
+
+            // Update input buttons
+            if (profile.input) {
+                $$("[data-input]").forEach(function (b) {
+                    b.classList.toggle("active", b.dataset.input === profile.input);
+                });
+            }
+
             applyingProfile = false;
             trackSuccess();
         }).catch(function (e) {
@@ -997,31 +1095,41 @@
         });
     }
 
-    if (saveProfileBtn) {
-        saveProfileBtn.addEventListener("click", function () {
-            var name = profileNameInput.value.trim();
-            if (!name) {
-                showError("Enter a profile name");
-                return;
-            }
-            var profiles = loadProfiles();
-            var eq = buildProfileFromSliders();
-            eq.name = name;
-
-            // Replace existing profile with same name, or append
-            var idx = -1;
-            for (var i = 0; i < profiles.length; i++) {
-                if (profiles[i].name === name) { idx = i; break; }
-            }
-            if (idx >= 0) {
-                profiles[idx] = eq;
-            } else {
-                profiles.push(eq);
-            }
-            saveProfilesToStorage(profiles);
-            profileNameInput.value = "";
-            activeProfileName = name;
-            renderProfiles();
+    if (newProfileBtn) {
+        newProfileBtn.addEventListener("click", function () {
+            var m = showModal(
+                '<h3>New Profile</h3>' +
+                '<input type="text" class="profile-name-input" id="new-profile-input" ' +
+                    'placeholder="Profile name" maxlength="20" aria-label="Profile name">' +
+                '<div class="confirm-actions" style="margin-top:16px">' +
+                    '<button class="btn btn-secondary btn-sm confirm-no">Cancel</button>' +
+                    '<button class="btn btn-primary btn-sm confirm-yes">Save</button>' +
+                '</div>'
+            );
+            if (!m) return;
+            var input = m.overlay.querySelector("#new-profile-input");
+            input.focus();
+            m.overlay.querySelector(".confirm-no").addEventListener("click", m.close);
+            m.overlay.querySelector(".confirm-yes").addEventListener("click", function () {
+                var name = input.value.trim();
+                if (!name) { showError("Enter a profile name"); return; }
+                var profiles = loadProfiles();
+                var eq = buildProfileFromSliders();
+                eq.name = name;
+                var idx = -1;
+                for (var i = 0; i < profiles.length; i++) {
+                    if (profiles[i].name === name) { idx = i; break; }
+                }
+                if (idx >= 0) {
+                    profiles[idx] = eq;
+                } else {
+                    profiles.push(eq);
+                }
+                saveProfilesToStorage(profiles);
+                activeProfileName = name;
+                renderProfiles();
+                m.close();
+            });
         });
     }
 
@@ -1339,7 +1447,8 @@
         localStorage.removeItem(ORDER_KEY);
         applyOrder(DEFAULT_ORDER);
         $$("[data-card-id]").forEach(function (card) {
-            setCardCollapsed(card, false, false);
+            var collapse = card.dataset.cardId === "log";
+            setCardCollapsed(card, collapse, false);
         });
     }
 
@@ -1363,7 +1472,12 @@
                 '</div>' +
             '</div>' +
             '<div class="settings-section">' +
+                '<span class="settings-label">Layout</span>' +
                 '<button class="btn btn-secondary settings-reset-btn">Reset Layout</button>' +
+            '</div>' +
+            '<div class="settings-section">' +
+                '<span class="settings-label">Tip Memory</span>' +
+                '<button class="btn btn-secondary settings-reset-tip-btn">Reset Tip</button>' +
             '</div>'
         );
         if (!m) return;
@@ -1381,6 +1495,11 @@
 
         m.overlay.querySelector(".settings-reset-btn").addEventListener("click", function () {
             resetLayout();
+            m.close();
+        });
+
+        m.overlay.querySelector(".settings-reset-tip-btn").addEventListener("click", function () {
+            StealthTech.resetTip();
             m.close();
         });
     }

@@ -173,7 +173,7 @@ header h1 {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1.8rem;
     color: var(--text-primary);
     transition: all var(--transition);
 }
@@ -735,14 +735,13 @@ main {
     margin-top: 12px;
 }
 
-.profile-save-row {
-    display: flex;
-    gap: 8px;
+.profile-new-btn {
+    width: 100%;
     margin-top: 12px;
 }
 
 .profile-name-input {
-    flex: 1;
+    width: 100%;
     padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -751,6 +750,7 @@ main {
     font-size: 0.85rem;
     font-family: inherit;
     outline: none;
+    margin-bottom: 4px;
     transition: border-color var(--transition);
 }
 
@@ -762,13 +762,8 @@ main {
     color: var(--text-muted);
 }
 
-.profile-hint {
-    margin-top: 8px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
 .profile-btn-wrap {
+    position: relative;
     display: inline-flex;
     align-items: stretch;
 }
@@ -779,7 +774,7 @@ main {
     border-right: none;
 }
 
-.profile-delete-btn {
+.profile-menu-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -789,19 +784,58 @@ main {
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     background: var(--bg-input);
     color: var(--text-muted);
-    font-size: 0.82rem;
+    font-size: 1.1rem;
     line-height: 1;
     cursor: pointer;
     transition: color var(--transition), border-color var(--transition);
 }
 
-.profile-btn-wrap .btn-option.active + .profile-delete-btn {
+.profile-btn-wrap .btn-option.active + .profile-menu-btn {
     border-color: var(--accent);
 }
 
-.profile-delete-btn:hover {
+.profile-menu-btn:hover {
     color: var(--text-secondary);
     border-color: var(--text-muted);
+}
+
+.profile-popover {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 200;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.profile-popover-action {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.profile-popover-action:hover {
+    background: var(--bg-input);
+}
+
+.profile-popover-action.danger {
+    color: var(--danger);
+}
+
+.profile-popover-action.danger:hover {
+    background: rgba(229, 62, 62, 0.1);
 }
 
 /* ---------- Confirm Modal ---------- */
@@ -893,7 +927,16 @@ main {
     margin-bottom: 8px;
 }
 
-.settings-reset-btn {
+.settings-section .button-group {
+    flex-wrap: nowrap;
+}
+
+.settings-section .btn-option {
+    min-width: 0;
+}
+
+.settings-reset-btn,
+.settings-reset-tip-btn {
     width: 100%;
 }
 
@@ -914,6 +957,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 18px;
+    padding: 8px 0;
 }
 
 .slider-row {
