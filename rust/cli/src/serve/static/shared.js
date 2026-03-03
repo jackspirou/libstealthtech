@@ -1023,6 +1023,7 @@
     var profiles = loadProfiles();
     profileButtonsContainer.innerHTML = "";
 
+    profileButtonsContainer.style.display = profiles.length ? "" : "none";
     if (profileEmpty) {
       profileEmpty.style.display = profiles.length ? "none" : "";
     }
