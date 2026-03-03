@@ -472,7 +472,7 @@
         });
 
         // Clear active profile when a built-in mode is reported
-        if (normalizedMode && normalizedMode !== "Manual" && activeProfileName !== null) {
+        if (normalizedMode && normalizedMode !== "Manual" && activeProfileName !== null && !applyingProfile) {
             activeProfileName = null;
             renderProfiles();
         }
@@ -794,6 +794,7 @@
 
     var PROFILES_KEY = "stealthtech-profiles";
     var activeProfileName = null;
+    var applyingProfile = false;
 
     function loadProfiles() {
         try {
@@ -850,12 +851,14 @@
     }
 
     function buildProfileFromSliders() {
+        var activeBtn = $(".btn-option[data-mode].active");
         return {
             bass: parseInt(sliders.bass.el.value, 10),
             treble: parseInt(sliders.treble.el.value, 10),
             balance: parseInt(sliders.balance.el.value, 10),
             centerVolume: parseInt(sliders["center-volume"].el.value, 10),
             rearVolume: parseInt(sliders["rear-volume"].el.value, 10),
+            mode: activeBtn ? activeBtn.dataset.mode : null,
         };
     }
 
@@ -864,14 +867,19 @@
         var t = getActiveTransport();
         if (!t || !t.send) return;
 
+        applyingProfile = true;
         activeProfileName = profile.name;
 
-        // Clear built-in mode highlights
-        $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
+        var mode = profile.mode || "manual";
+
+        // Highlight the mode button optimistically
+        $$(".btn-option[data-mode]").forEach(function (b) {
+            b.classList.toggle("active", profile.mode != null && b.dataset.mode === profile.mode);
+        });
         renderProfiles();
 
-        // Send manual mode first, then EQ values sequentially
-        t.send("mode", "manual").then(function () {
+        // Send mode first, then EQ values sequentially
+        t.send("mode", mode).then(function () {
             return t.send("bass", profile.bass);
         }).then(function () {
             return t.send("treble", profile.treble);
@@ -888,8 +896,10 @@
             setSlider("balance", profile.balance);
             setSlider("center-volume", profile.centerVolume);
             setSlider("rear-volume", profile.rearVolume);
+            applyingProfile = false;
             trackSuccess();
         }).catch(function (e) {
+            applyingProfile = false;
             activeProfileName = null;
             renderProfiles();
             showError("Failed to apply profile: " + e.message);
@@ -1022,7 +1032,7 @@
     // ---------- Card Drag-and-Drop ----------
 
     var ORDER_KEY = "stealthtech-card-order";
-    var DEFAULT_ORDER = ["connection", "system", "input", "media", "mode", "volume", "eq", "shape", "log"];
+    var DEFAULT_ORDER = ["connection", "system", "input", "media", "mode", "profiles", "volume", "eq", "shape", "log"];
 
     function loadOrder() {
         try { return JSON.parse(localStorage.getItem(ORDER_KEY)); } catch (e) { return null; }
@@ -1237,6 +1247,22 @@
 
     initCardLayout();
 
+    // ---------- Reset Layout ----------
+
+    function resetLayout() {
+        localStorage.removeItem(COLLAPSED_KEY);
+        localStorage.removeItem(ORDER_KEY);
+        applyOrder(DEFAULT_ORDER);
+        $$("[data-card-id]").forEach(function (card) {
+            setCardCollapsed(card, false, false);
+        });
+    }
+
+    var resetBtn = $("#reset-layout-btn");
+    if (resetBtn) {
+        resetBtn.addEventListener("click", resetLayout);
+    }
+
     // ---------- Public API ----------
 
     window.StealthTech = {
@@ -1255,13 +1281,6 @@
             hideTip();
             console.log("Tip counter reset");
         },
-        resetLayout: function () {
-            localStorage.removeItem(COLLAPSED_KEY);
-            localStorage.removeItem(ORDER_KEY);
-            applyOrder(DEFAULT_ORDER);
-            $$("[data-card-id]").forEach(function (card) {
-                setCardCollapsed(card, false, false);
-            });
-        },
+        resetLayout: resetLayout,
     };
 })();

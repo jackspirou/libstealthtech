@@ -438,12 +438,6 @@ async fn set_input(
 }
 
 /// POST /api/mode -- set sound mode (movies/music/tv/news/manual).
-///
-/// After switching modes the device applies new EQ preset values internally
-/// but only sends back a sound-mode notification — not the individual EQ
-/// values. We issue a `request_state()` to trigger a full notification burst,
-/// then briefly release the lock so the background listener can apply the
-/// updates before we return the refreshed state to the client.
 async fn set_mode(
     State(state): State<AppState>,
     Json(payload): Json<ModeRequest>,
@@ -463,42 +457,10 @@ async fn set_mode(
         }
     };
 
-    // Phase 1: send mode change + state query, then release the lock so the
-    // background notification handler can apply the incoming EQ values.
-    {
-        let mut device_guard = state.device.lock().await;
-        match device_guard.as_mut() {
-            Some(device) => {
-                if let Err(e) = device.set_sound_mode(mode).await {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(serde_json::json!({ "error": format!("{}", e) })),
-                    )
-                        .into_response();
-                }
-                if let Err(e) = device.request_state().await {
-                    tracing::warn!(error = %e, "Failed to request state after mode change");
-                }
-            }
-            None => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(serde_json::json!({ "error": "No device connected" })),
-                )
-                    .into_response();
-            }
-        }
-    } // lock released
-
-    // Phase 2: give the background listener time to process the notification burst.
-    tokio::time::sleep(Duration::from_millis(300)).await;
-
-    // Phase 3: return the now-refreshed state.
-    let device_guard = state.device.lock().await;
-    match device_guard.as_ref() {
-        Some(device) => Json(DeviceStateResponse::from_device(device)).into_response(),
-        None => Json(DeviceStateResponse::disconnected()).into_response(),
-    }
+    with_device(&state, |device| {
+        Box::pin(async move { device.set_sound_mode(mode).await })
+    })
+    .await
 }
 
 /// POST /api/power -- power on or standby.

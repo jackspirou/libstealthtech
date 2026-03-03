@@ -70,7 +70,8 @@
                     If this project saved you from the official app, consider buying me a coffee :)
                 </div>
             </div>
-            <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+            <button class="header-icon-btn" id="reset-layout-btn" title="Reset layout" aria-label="Reset layout">&#x21BA;</button>
+            <button class="header-icon-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
                 <span id="theme-icon">&#9788;</span>
             </button>
         </div>
@@ -207,13 +208,24 @@
                 <button class="btn btn-option" data-mode="tv" title="Balanced mode for TV shows and streaming">TV</button>
                 <button class="btn btn-option" data-mode="news" title="Enhanced dialog clarity for speech-heavy content">News</button>
             </div>
-            <div class="button-group" id="profile-buttons"></div>
-            <div class="profile-save-row" id="profile-save-row">
-                <input type="text" class="profile-name-input" id="profile-name-input"
-                       placeholder="Profile name" maxlength="20" aria-label="Profile name">
-                <button class="btn btn-primary btn-sm" id="save-profile-btn">Save</button>
             </div>
-            <div class="profile-hint" id="profile-hint">Save your current EQ settings as a reusable profile.</div>
+        </section>
+
+        <!-- Sound Profiles -->
+        <section class="card" id="profiles-card" data-card-id="profiles">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="chevron" aria-hidden="true"></span>
+                <h2>Sound Profiles</h2>
+                <span class="drag-handle" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
+                <div class="button-group" id="profile-buttons"></div>
+                <div class="profile-save-row" id="profile-save-row">
+                    <input type="text" class="profile-name-input" id="profile-name-input"
+                           placeholder="Profile name" maxlength="20" aria-label="Profile name">
+                    <button class="btn btn-primary btn-sm" id="save-profile-btn">Save</button>
+                </div>
+                <div class="profile-hint" id="profile-hint">Save your current sound mode and EQ settings as a reusable profile.</div>
             </div>
         </section>
 

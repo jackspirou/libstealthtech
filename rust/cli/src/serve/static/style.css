@@ -166,8 +166,8 @@ header h1 {
     50% { opacity: 0.4; }
 }
 
-/* ---------- Theme Toggle ---------- */
-.theme-toggle {
+/* ---------- Header Icon Buttons ---------- */
+.header-icon-btn {
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -182,7 +182,7 @@ header h1 {
     transition: all var(--transition);
 }
 
-.theme-toggle:hover {
+.header-icon-btn:hover {
     background: var(--border);
 }
 
@@ -742,10 +742,6 @@ main {
 }
 
 /* ---------- Custom Profiles ---------- */
-#profile-buttons:not(:empty) {
-    margin-top: 8px;
-}
-
 .profile-save-row {
     display: flex;
     gap: 8px;
