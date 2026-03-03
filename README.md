@@ -22,6 +22,21 @@ instantly via Web Bluetooth.
   <img src="docs/screenshot.png" alt="StealthTech Remote web app connected to a Sound + Charge system" width="400">
 </p>
 
+## Support
+
+If this project saved you from the official app, consider buying me a coffee :)
+
+```
+    ( (
+     ) )
+  .-------.
+  |       |]
+  \       /
+   `-----'
+```
+
+[![Ko-fi](https://img.shields.io/badge/Buy_Me_a_Coffee-Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/jackspirou)
+
 ## Repository Structure
 
 ```
