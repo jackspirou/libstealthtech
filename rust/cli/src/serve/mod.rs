@@ -62,10 +62,7 @@ pub fn export(output: &Path) -> anyhow::Result<()> {
         .filter(|line| !line.contains("<!-- server-only -->"))
         .collect::<Vec<_>>()
         .join("\n");
-    let index_html = index_html.replace(
-        "<html lang=\"en\">",
-        "<html lang=\"en\" data-export>",
-    );
+    let index_html = index_html.replace("<html lang=\"en\">", "<html lang=\"en\" data-export>");
     std::fs::write(output.join("index.html"), index_html)?;
     println!("  index.html");
 
