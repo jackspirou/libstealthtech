@@ -36,7 +36,6 @@ struct DeviceStateResponse {
     mute: Option<bool>,
     power: Option<bool>,
     quiet_couch: Option<bool>,
-    surround_enabled: Option<bool>,
     subwoofer_connected: Option<bool>,
     config_shape: Option<String>,
     input: Option<String>,
@@ -108,7 +107,6 @@ impl DeviceStateResponse {
             mute: state.mute,
             power: state.power,
             quiet_couch: state.quiet_couch,
-            surround_enabled: state.surround_enabled,
             subwoofer_connected: state.subwoofer_connected,
             config_shape: state.config_shape.map(|s| format!("{s}")),
             input: state.input.map(|i| format!("{}", i)),
@@ -131,7 +129,6 @@ impl DeviceStateResponse {
             mute: None,
             power: None,
             quiet_couch: None,
-            surround_enabled: None,
             subwoofer_connected: None,
             config_shape: None,
             input: None,
@@ -206,7 +203,6 @@ pub fn routes() -> Router<AppState> {
         .route("/rear-volume", post(set_rear_volume))
         .route("/balance", post(set_balance))
         .route("/config-shape", post(set_config_shape))
-        .route("/surround", post(set_surround))
         .route("/play-pause", post(set_play_pause))
         .route("/skip", post(set_skip))
 }
@@ -543,17 +539,6 @@ async fn set_config_shape(
 
     with_device(&state, |device| {
         Box::pin(async move { device.set_config_shape(shape).await })
-    })
-    .await
-}
-
-/// POST /api/surround -- enable or disable surround speakers.
-async fn set_surround(
-    State(state): State<AppState>,
-    Json(payload): Json<ValueBoolRequest>,
-) -> impl IntoResponse {
-    with_device(&state, |device| {
-        Box::pin(async move { device.set_surround(payload.value).await })
     })
     .await
 }

@@ -251,8 +251,6 @@ pub enum Command {
     SetConfigShape(ConfigShape),
     /// Set arm type (byte ID).
     SetArmType(u8),
-    /// Enable/disable surround speakers.
-    SetSurroundEnabled(bool),
 
     // === Media (PlayerControl characteristic, 0005) ===
     /// Play/pause Bluetooth media.
@@ -340,11 +338,8 @@ impl Command {
             // Covering characteristic
             Command::SetFabric(id) => (CHAR_COVERING, format_b(0x08, *id)),
 
-            // These commands' exact encoding is not yet confirmed
+            // This command's exact encoding is not yet confirmed
             Command::SetArmType(v) => (CHAR_EQ_CONTROL, format_a(0x03, 0x0D, *v)),
-            Command::SetSurroundEnabled(on) => {
-                (CHAR_EQ_CONTROL, format_a(0x03, 0x0E, u8::from(*on)))
-            }
 
             // PlayerControl characteristic (0x05 cmd_id, Format A)
             Command::SetPlayPause(v) => (CHAR_PLAYER_CONTROL, format_a(0x05, 0x00, *v)),

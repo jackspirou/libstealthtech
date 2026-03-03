@@ -40,8 +40,6 @@ pub struct DeviceState {
     pub rear_channel_volume: Option<u8>,
 
     // === Speaker Configuration ===
-    /// Whether surround speakers are enabled.
-    pub surround_enabled: Option<bool>,
     /// Whether Quiet Couch Mode is active. MCU: `AppDate.QuiteMode`.
     pub quiet_couch: Option<bool>,
     /// Whether the subwoofer is connected.

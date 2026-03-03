@@ -272,7 +272,7 @@ pub async fn run(command: SniffCommands, scan_timeout: u64) -> anyhow::Result<()
                 .clone();
 
             println!("Writing {} bytes to {}...", raw_data.len(), uuid);
-            conn.write(&char, &raw_data, btleplug::api::WriteType::WithResponse)
+            conn.write(&char, &raw_data, btleplug::api::WriteType::WithoutResponse)
                 .await?;
             println!("✓ Write successful");
 

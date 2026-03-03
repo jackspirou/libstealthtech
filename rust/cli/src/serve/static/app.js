@@ -66,7 +66,6 @@
         "power":           "/api/power",
         "mute":            "/api/mute",
         "quietCouch":      "/api/quiet-couch",
-        "surround":        "/api/surround",
         "input":           "/api/input",
         "mode":            "/api/mode",
         "config-shape":    "/api/config-shape",

@@ -125,7 +125,6 @@ const toggleCommands = {
     "power":      "SetPower",
     "mute":       "SetMute",
     "quietCouch": "SetQuietCouch",
-    "surround":   "SetSurroundEnabled",
 };
 
 const inputEnum = {
@@ -363,7 +362,6 @@ function onNotification(event) {
             input: state.input(),
             sound_mode: state.sound_mode(),
             config_shape: state.config_shape(),
-            surround_enabled: state.surround_enabled(),
             subwoofer_connected: state.subwoofer_connected(),
             firmware: fwJson ? JSON.parse(fwJson) : null,
         };

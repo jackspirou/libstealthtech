@@ -172,14 +172,6 @@ impl StealthTechDevice {
     // Speaker Configuration
     // ========================================================================
 
-    /// Enable or disable surround speakers.
-    pub async fn set_surround(&mut self, enabled: bool) -> anyhow::Result<()> {
-        self.send_command(Command::SetSurroundEnabled(enabled))
-            .await?;
-        self.state.surround_enabled = Some(enabled);
-        Ok(())
-    }
-
     /// Toggle Quiet Couch Mode.
     pub async fn set_quiet_couch(&mut self, enabled: bool) -> anyhow::Result<()> {
         self.send_command(Command::SetQuietCouch(enabled)).await?;

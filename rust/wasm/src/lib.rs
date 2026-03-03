@@ -132,7 +132,6 @@ pub fn characteristic_uuids() -> String {
 /// {"SetFabric": 2}
 /// {"SetConfigShape": "LShape"}
 /// {"SetArmType": 1}
-/// {"SetSurroundEnabled": true}
 /// {"SetPlayPause": 1}
 /// {"SetSkip": 0}
 /// "GetState"
@@ -228,10 +227,6 @@ fn parse_command(cmd_json: &str) -> Result<Command, JsError> {
                 "SetArmType" => {
                     let v = val_to_u8(val, "SetArmType")?;
                     Ok(Command::SetArmType(v))
-                }
-                "SetSurroundEnabled" => {
-                    let b = val_to_bool(val, "SetSurroundEnabled")?;
-                    Ok(Command::SetSurroundEnabled(b))
                 }
                 "SetPlayPause" => {
                     let v = val_to_u8(val, "SetPlayPause")?;
@@ -430,11 +425,6 @@ impl WasmDeviceState {
     /// Get whether quiet couch mode is active, if known.
     pub fn quiet_couch(&self) -> Option<bool> {
         self.inner.quiet_couch
-    }
-
-    /// Get whether surround speakers are enabled, if known.
-    pub fn surround_enabled(&self) -> Option<bool> {
-        self.inner.surround_enabled
     }
 
     /// Get whether the subwoofer is connected, if known.

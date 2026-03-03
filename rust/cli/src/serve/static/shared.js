@@ -58,7 +58,6 @@
         power:      { el: $("#power-btn") },
         mute:       { el: $("#mute-btn") },
         quietCouch: { el: $("#quiet-couch-btn") },
-        surround: { el: $("#surround-btn") },
     };
 
     // ---------- Theme ----------
@@ -449,12 +448,6 @@
             toggles.quietCouch.el.textContent = state.quiet_couch ? "ON" : "OFF";
             toggles.quietCouch.el.setAttribute("aria-pressed", state.quiet_couch);
         }
-        if (state.surround_enabled != null) {
-            toggles.surround.el.dataset.active = state.surround_enabled;
-            toggles.surround.el.textContent = state.surround_enabled ? "ON" : "OFF";
-            toggles.surround.el.setAttribute("aria-pressed", state.surround_enabled);
-        }
-
         // Input buttons (normalize both server and BLE format strings)
         var normalizedInput = state.input ? (inputNormalize[state.input] || state.input) : null;
         $$("[data-input]").forEach(function (btn) {
@@ -474,8 +467,6 @@
                 btn.classList.toggle("active", normalizedShape === shapeMap[btn.dataset.shape]);
             });
         }
-
-        // Surround (handled by toggle map, but also set aria-pressed)
 
         // Subwoofer status (read-only)
         if (state.subwoofer_connected != null && subRow && subStatus) {
