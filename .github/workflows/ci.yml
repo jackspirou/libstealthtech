@@ -76,6 +76,12 @@ jobs:
       - name: Install Linux BLE dependencies
         run: sudo apt-get update && sudo apt-get install -y libbluetooth-dev libdbus-1-dev pkg-config
 
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM and embed
+        run: make wasm-embed
+
       - name: Build release binaries
         run: cargo build --release -p stealthtech-tools
 
@@ -84,3 +90,36 @@ jobs:
         with:
           name: stealthtech-binaries-linux
           path: target/release/stealthtech
+
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build-release
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download release binary
+        uses: actions/download-artifact@v4
+        with:
+          name: stealthtech-binaries-linux
+
+      - name: Export site
+        run: |
+          chmod +x stealthtech
+          ./stealthtech export --output _site
+          echo 'stealthtech.app' > _site/CNAME
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
