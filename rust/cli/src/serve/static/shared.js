@@ -36,11 +36,23 @@
     var subStatus = $("#subwoofer-status");
     var mediaCard = $("#media-card");
 
+    // Profile elements
+    var profileButtonsContainer = $("#profile-buttons");
+    var profileNameInput = $("#profile-name-input");
+    var saveProfileBtn = $("#save-profile-btn");
+    var profileHint = $("#profile-hint");
+
     // ---------- Percentage display helper ----------
 
     function toPercent(value, max) {
         if (!max) return "0%";
         return Math.round((value / max) * 100) + "%";
+    }
+
+    function setSlider(key, value) {
+        if (sliders[key]._dragging) return;
+        sliders[key].el.value = value;
+        sliders[key].val.textContent = toPercent(value, parseInt(sliders[key].el.max, 10));
     }
 
     // Sliders
@@ -293,6 +305,9 @@
         });
         $$("[data-input]").forEach(function (btn) { btn.disabled = !enabled; });
         $$(".btn-option[data-mode]").forEach(function (btn) { btn.disabled = !enabled; });
+        $$(".profile-btn-wrap .btn-option").forEach(function (btn) { btn.disabled = !enabled; });
+        if (profileNameInput) profileNameInput.disabled = !enabled;
+        if (saveProfileBtn) saveProfileBtn.disabled = !enabled;
         $$("[data-shape]").forEach(function (btn) { btn.disabled = !enabled; });
         var mediaBtn = $("#play-pause-btn");
         if (mediaBtn) mediaBtn.disabled = !enabled;
@@ -352,7 +367,6 @@
         music: "Music",
         tv: "Tv",
         news: "News",
-        manual: "Manual",
     };
 
     var shapeNormalize = {
@@ -425,10 +439,7 @@
         };
         Object.keys(sliderStateKeys).forEach(function (key) {
             var val = state[sliderStateKeys[key]];
-            if (val != null && !sliders[key]._dragging) {
-                sliders[key].el.value = val;
-                sliders[key].val.textContent = toPercent(val, parseInt(sliders[key].el.max, 10));
-            }
+            if (val != null) setSlider(key, val);
         });
 
         // Toggles
@@ -459,6 +470,12 @@
         $$(".btn-option[data-mode]").forEach(function (btn) {
             btn.classList.toggle("active", normalizedMode === modeMap[btn.dataset.mode]);
         });
+
+        // Clear active profile when a built-in mode is reported
+        if (normalizedMode && normalizedMode !== "Manual" && activeProfileName !== null) {
+            activeProfileName = null;
+            renderProfiles();
+        }
 
         // Config shape buttons
         if (state.config_shape != null) {
@@ -772,6 +789,149 @@
             hideTip();
         });
     }
+
+    // ---------- Custom Profiles ----------
+
+    var PROFILES_KEY = "stealthtech-profiles";
+    var activeProfileName = null;
+
+    function loadProfiles() {
+        try {
+            return JSON.parse(localStorage.getItem(PROFILES_KEY)) || [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveProfilesToStorage(profiles) {
+        localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+    }
+
+    function renderProfiles() {
+        if (!profileButtonsContainer) return;
+        var profiles = loadProfiles();
+        profileButtonsContainer.innerHTML = "";
+
+        if (profiles.length === 0) {
+            if (profileHint) profileHint.style.display = "";
+            return;
+        }
+        if (profileHint) profileHint.style.display = "none";
+
+        profiles.forEach(function (p) {
+            var wrap = document.createElement("div");
+            wrap.className = "profile-btn-wrap";
+
+            var btn = document.createElement("button");
+            btn.className = "btn btn-option";
+            btn.textContent = p.name;
+            btn.disabled = !devicePoweredOn;
+            btn.addEventListener("click", function () {
+                applyProfile(p);
+            });
+
+            if (activeProfileName === p.name) {
+                btn.classList.add("active");
+            }
+
+            var del = document.createElement("button");
+            del.className = "profile-delete-btn";
+            del.textContent = "\u00d7";
+            del.title = "Delete " + p.name;
+            del.addEventListener("click", function (e) {
+                e.stopPropagation();
+                deleteProfile(p.name);
+            });
+
+            wrap.appendChild(btn);
+            wrap.appendChild(del);
+            profileButtonsContainer.appendChild(wrap);
+        });
+    }
+
+    function buildProfileFromSliders() {
+        return {
+            bass: parseInt(sliders.bass.el.value, 10),
+            treble: parseInt(sliders.treble.el.value, 10),
+            balance: parseInt(sliders.balance.el.value, 10),
+            centerVolume: parseInt(sliders["center-volume"].el.value, 10),
+            rearVolume: parseInt(sliders["rear-volume"].el.value, 10),
+        };
+    }
+
+    function applyProfile(profile) {
+        if (!devicePoweredOn) return;
+        var t = getActiveTransport();
+        if (!t || !t.send) return;
+
+        activeProfileName = profile.name;
+
+        // Clear built-in mode highlights
+        $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
+        renderProfiles();
+
+        // Send manual mode first, then EQ values sequentially
+        t.send("mode", "manual").then(function () {
+            return t.send("bass", profile.bass);
+        }).then(function () {
+            return t.send("treble", profile.treble);
+        }).then(function () {
+            return t.send("balance", profile.balance);
+        }).then(function () {
+            return t.send("center-volume", profile.centerVolume);
+        }).then(function () {
+            return t.send("rear-volume", profile.rearVolume);
+        }).then(function () {
+            // Update sliders to reflect profile values
+            setSlider("bass", profile.bass);
+            setSlider("treble", profile.treble);
+            setSlider("balance", profile.balance);
+            setSlider("center-volume", profile.centerVolume);
+            setSlider("rear-volume", profile.rearVolume);
+            trackSuccess();
+        }).catch(function (e) {
+            activeProfileName = null;
+            renderProfiles();
+            showError("Failed to apply profile: " + e.message);
+        });
+    }
+
+    function deleteProfile(name) {
+        var profiles = loadProfiles().filter(function (p) { return p.name !== name; });
+        saveProfilesToStorage(profiles);
+        if (activeProfileName === name) activeProfileName = null;
+        renderProfiles();
+    }
+
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener("click", function () {
+            var name = profileNameInput.value.trim();
+            if (!name) {
+                showError("Enter a profile name");
+                return;
+            }
+            var profiles = loadProfiles();
+            var eq = buildProfileFromSliders();
+            eq.name = name;
+
+            // Replace existing profile with same name, or append
+            var idx = -1;
+            for (var i = 0; i < profiles.length; i++) {
+                if (profiles[i].name === name) { idx = i; break; }
+            }
+            if (idx >= 0) {
+                profiles[idx] = eq;
+            } else {
+                profiles.push(eq);
+            }
+            saveProfilesToStorage(profiles);
+            profileNameInput.value = "";
+            activeProfileName = name;
+            renderProfiles();
+        });
+    }
+
+    renderProfiles();
 
     // ---------- Public API ----------
 

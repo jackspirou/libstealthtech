@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Your Lovesac Sactionals StealthTech Sound + Charge From Your Phone</title>
-    <meta name="description" content="Open this page on your phone and connect to your Lovesac Sactionals StealthTech Sound + Charge system in seconds. No app to install — control volume, bass, treble, inputs, and surround right from your browser.">
-    <meta name="keywords" content="Lovesac, Sactionals, StealthTech, Sound + Charge, phone remote, control from phone, no app, web bluetooth, volume control, EQ, surround sound, Lovesac remote, Lovesac app alternative">
+    <meta name="description" content="Open this page on your phone and connect to your Lovesac Sactionals StealthTech Sound + Charge system in seconds. No app to install — control volume, bass, treble, inputs, and sound modes right from your browser.">
+    <meta name="keywords" content="Lovesac, Sactionals, StealthTech, Sound + Charge, phone remote, control from phone, no app, web bluetooth, volume control, EQ, sound modes, custom profiles, Lovesac remote, Lovesac app alternative">
     <link rel="canonical" href="https://stealthtech.app/">
     <!-- Open Graph -->
     <meta property="og:title" content="Control Your Lovesac StealthTech From Your Phone — No App Needed">
-    <meta property="og:description" content="Open this page on your phone and instantly connect to your Lovesac Sactionals StealthTech Sound + Charge. Adjust volume, EQ, inputs, and surround — no app install required.">
+    <meta property="og:description" content="Open this page on your phone and instantly connect to your Lovesac Sactionals StealthTech Sound + Charge. Adjust volume, EQ, inputs, and sound modes — no app install required.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://stealthtech.app/">
     <meta property="og:image" content="https://stealthtech.app/favicon.svg">
@@ -31,7 +31,7 @@
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "StealthTech Remote",
-      "description": "Control your Lovesac Sactionals StealthTech Sound + Charge system from your phone. Open this page in Chrome, tap Connect, and adjust volume, EQ, inputs, and surround instantly — no app install needed.",
+      "description": "Control your Lovesac Sactionals StealthTech Sound + Charge system from your phone. Open this page in Chrome, tap Connect, and adjust volume, EQ, inputs, and sound modes instantly — no app install needed.",
       "url": "https://stealthtech.app/",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Android, Chrome OS, Windows, macOS",
@@ -41,7 +41,7 @@
         "price": "0",
         "priceCurrency": "USD"
       },
-      "featureList": "Volume control, Bass and treble EQ, Input source switching, Sound mode presets, Couch shape configuration, Bluetooth media controls, Subwoofer status"
+      "featureList": "Volume control, Bass and treble EQ, Input source switching, Sound mode presets, Custom EQ profiles, Couch shape configuration, Bluetooth media controls, Subwoofer status"
     }
     </script>
 </head>
@@ -173,12 +173,18 @@
         <section class="card" id="mode-card">
             <h2>Sound Mode</h2>
             <div class="button-group">
-                <button class="btn btn-option" data-mode="movies" title="Enhanced surround and bass for movie soundtracks">Movies</button>
+                <button class="btn btn-option" data-mode="movies" title="Enhanced bass and spatial audio for movie soundtracks">Movies</button>
                 <button class="btn btn-option" data-mode="music" title="Balanced stereo optimized for music playback">Music</button>
                 <button class="btn btn-option" data-mode="tv" title="Balanced mode for TV shows and streaming">TV</button>
                 <button class="btn btn-option" data-mode="news" title="Enhanced dialog clarity for speech-heavy content">News</button>
-                <button class="btn btn-option" data-mode="manual" title="Uses your custom bass, treble, and balance settings">Manual</button>
             </div>
+            <div class="button-group" id="profile-buttons"></div>
+            <div class="profile-save-row" id="profile-save-row">
+                <input type="text" class="profile-name-input" id="profile-name-input"
+                       placeholder="Profile name" maxlength="20" aria-label="Profile name">
+                <button class="btn btn-primary btn-sm" id="save-profile-btn">Save</button>
+            </div>
+            <div class="profile-hint" id="profile-hint">Save your current EQ settings as a reusable profile.</div>
         </section>
 
         <!-- Volume Controls -->

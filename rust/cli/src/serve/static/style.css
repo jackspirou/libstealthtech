@@ -741,6 +741,74 @@ main {
     text-align: center;
 }
 
+/* ---------- Custom Profiles ---------- */
+#profile-buttons:not(:empty) {
+    margin-top: 8px;
+}
+
+.profile-save-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.profile-name-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color var(--transition);
+}
+
+.profile-name-input:focus {
+    border-color: var(--accent);
+}
+
+.profile-name-input::placeholder {
+    color: var(--text-muted);
+}
+
+.profile-hint {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.profile-btn-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.profile-delete-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: var(--danger);
+    color: #fff;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    opacity: 0.5;
+    transition: opacity var(--transition);
+}
+
+.profile-btn-wrap:hover .profile-delete-btn {
+    opacity: 1;
+}
+
 /* ---------- Media Controls ---------- */
 .media-controls {
     justify-content: center;
