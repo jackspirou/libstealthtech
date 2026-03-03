@@ -204,6 +204,24 @@ header h1 {
     background: var(--border);
 }
 
+.kofi-link {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    transition: all var(--transition);
+    text-decoration: none;
+}
+
+.kofi-link:hover {
+    background: var(--border);
+}
+
 /* ---------- Main Layout ---------- */
 main {
     max-width: 720px;

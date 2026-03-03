@@ -4,6 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
+[![Ko-fi](https://img.shields.io/badge/Buy_Me_a_Coffee-Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/jackspirou)
 
 The Lovesac StealthTech system is a Harman Kardon surround sound system embedded in
 modular furniture, controlled via a BLE-connected mobile app that is notoriously
