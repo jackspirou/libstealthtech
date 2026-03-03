@@ -336,55 +336,9 @@ pub fn decode_response(uuid_str: &str, data: &[u8]) -> Result<String, JsError> {
         uuid::Uuid::parse_str(uuid_str).map_err(|e| JsError::new(&format!("invalid UUID: {e}")))?;
 
     let response = Response::decode(uuid, data);
-    let json = response_to_json(&response);
-    Ok(json.to_string())
-}
-
-/// Convert a `Response` into a JSON `Value`.
-fn response_to_json(response: &Response) -> Value {
-    match response {
-        Response::Volume(v) => json!({"Volume": v}),
-        Response::CenterVolume(v) => json!({"CenterVolume": v}),
-        Response::Treble(v) => json!({"Treble": v}),
-        Response::Bass(v) => json!({"Bass": v}),
-        Response::MuteState(on) => json!({"MuteState": on}),
-        Response::QuietMode(on) => json!({"QuietMode": on}),
-        Response::Balance(v) => json!({"Balance": v}),
-        Response::Layout(v) => json!({"Layout": v}),
-        Response::CurrentInput(input) => {
-            let name = match input {
-                Input::HdmiArc => "HdmiArc",
-                Input::Bluetooth => "Bluetooth",
-                Input::Aux => "Aux",
-                Input::Optical => "Optical",
-            };
-            json!({"CurrentInput": name})
-        }
-        Response::Power(on) => json!({"Power": on}),
-        Response::CurrentSoundMode(mode) => {
-            let name = match mode {
-                SoundMode::Movies => "Movies",
-                SoundMode::Music => "Music",
-                SoundMode::Tv => "Tv",
-                SoundMode::News => "News",
-                SoundMode::Manual => "Manual",
-            };
-            json!({"CurrentSoundMode": name})
-        }
-        Response::Covering(v) => json!({"Covering": v}),
-        Response::ArmType(v) => json!({"ArmType": v}),
-        Response::SubwooferConnected(on) => json!({"SubwooferConnected": on}),
-        Response::RearVolume(v) => json!({"RearVolume": v}),
-        Response::FirmwareVersion {
-            fw_type,
-            major,
-            minor,
-        } => json!({"FirmwareVersion": {"fw_type": fw_type, "major": major, "minor": minor}}),
-        Response::Unknown {
-            characteristic_uuid,
-            data,
-        } => json!({"Unknown": {"uuid": characteristic_uuid.to_string(), "data": data}}),
-    }
+    let json = serde_json::to_string(&response)
+        .map_err(|e| JsError::new(&format!("serialize error: {e}")))?;
+    Ok(json)
 }
 
 // ============================================================================
@@ -419,131 +373,11 @@ impl WasmDeviceState {
     /// Update state from a decoded response JSON string.
     ///
     /// Accepts the same JSON format returned by `decode_response()`.
-    /// Unknown or unrecognized fields are silently ignored.
+    /// Returns an error if the JSON does not match a valid `Response` variant.
     pub fn apply_response(&mut self, response_json: &str) -> Result<(), JsError> {
-        let value: Value = serde_json::from_str(response_json)
-            .map_err(|e| JsError::new(&format!("invalid JSON: {e}")))?;
-
-        let obj = value
-            .as_object()
-            .ok_or_else(|| JsError::new("response JSON must be an object"))?;
-
-        if let Some((key, val)) = obj.iter().next() {
-            // Gate stale audio-state notifications during power-off burst
-            if self.inner.power == Some(false) {
-                match key.as_str() {
-                    "Volume" | "CenterVolume" | "Treble" | "Bass" | "MuteState"
-                    | "QuietMode" | "Balance" | "CurrentInput" | "CurrentSoundMode"
-                    | "RearVolume" => return Ok(()),
-                    _ => {}
-                }
-            }
-
-            match key.as_str() {
-                "Volume" => {
-                    self.inner.volume = val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "CenterVolume" => {
-                    self.inner.center_volume = val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "Treble" => {
-                    self.inner.treble = val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "Bass" => {
-                    self.inner.bass = val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "MuteState" => {
-                    self.inner.mute = val.as_bool();
-                }
-                "QuietMode" => {
-                    self.inner.quiet_couch = val.as_bool();
-                }
-                "Balance" => {
-                    self.inner.balance = val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "Layout" => {
-                    if let Some(n) = val.as_u64().and_then(|n| u8::try_from(n).ok()) {
-                        self.inner.config_shape = ConfigShape::from_byte(n).ok();
-                    }
-                }
-                "CurrentInput" => {
-                    if let Some(s) = val.as_str() {
-                        self.inner.input = match s {
-                            "HdmiArc" => Some(Input::HdmiArc),
-                            "Bluetooth" => Some(Input::Bluetooth),
-                            "Aux" => Some(Input::Aux),
-                            "Optical" => Some(Input::Optical),
-                            _ => None,
-                        };
-                    }
-                }
-                "Power" => {
-                    self.inner.power = val.as_bool();
-                }
-                "CurrentSoundMode" => {
-                    if let Some(s) = val.as_str() {
-                        self.inner.sound_mode = match s {
-                            "Movies" => Some(SoundMode::Movies),
-                            "Music" => Some(SoundMode::Music),
-                            "Tv" => Some(SoundMode::Tv),
-                            "News" => Some(SoundMode::News),
-                            "Manual" => Some(SoundMode::Manual),
-                            _ => None,
-                        };
-                    }
-                }
-                "Covering" => {
-                    self.inner.fabric = val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "ArmType" => {
-                    self.inner.arm_type = val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "SubwooferConnected" => {
-                    self.inner.subwoofer_connected = val.as_bool();
-                }
-                "RearVolume" => {
-                    self.inner.rear_channel_volume =
-                        val.as_u64().and_then(|n| u8::try_from(n).ok());
-                }
-                "FirmwareVersion" => {
-                    if let Some(obj) = val.as_object() {
-                        let major = obj
-                            .get("major")
-                            .and_then(|v| v.as_u64())
-                            .and_then(|n| u8::try_from(n).ok())
-                            .unwrap_or(0);
-                        let minor = obj
-                            .get("minor")
-                            .and_then(|v| v.as_u64())
-                            .and_then(|n| u8::try_from(n).ok())
-                            .unwrap_or(0);
-                        let fw_type = obj
-                            .get("fw_type")
-                            .and_then(|v| v.as_u64())
-                            .and_then(|n| u8::try_from(n).ok())
-                            .unwrap_or(0);
-                        use libstealthtech_protocol::characteristics::FirmwareComponentVersion;
-                        let ver = FirmwareComponentVersion::new(major, minor);
-                        match fw_type {
-                            1 => self.inner.mcu_version = Some(ver),
-                            2 => self.inner.dsp_version = Some(ver),
-                            3 => self.inner.eq_version = Some(ver),
-                            _ => {}
-                        }
-                        let type_name = match fw_type {
-                            1 => "MCU",
-                            2 => "DSP",
-                            3 => "EQ",
-                            _ => "Unknown",
-                        };
-                        self.inner.firmware_version = Some(format!("{type_name} v{major}.{minor}"));
-                    }
-                }
-                // Unknown responses are silently ignored
-                _ => {}
-            }
-        }
-
+        let response: Response = serde_json::from_str(response_json)
+            .map_err(|e| JsError::new(&format!("invalid response JSON: {e}")))?;
+        self.inner.apply_response(&response);
         Ok(())
     }
 
@@ -1008,7 +842,9 @@ mod tests {
     fn device_state_apply_unknown_is_ignored() {
         let mut state = WasmDeviceState::new();
         state
-            .apply_response(r#"{"Unknown": {"uuid": "abc", "data": [1,2,3]}}"#)
+            .apply_response(
+                r#"{"Unknown": {"uuid": "65786365-6c70-6f69-6e74-2e636f6d0001", "data": [1,2,3]}}"#,
+            )
             .unwrap();
         // No fields should be set
         assert_eq!(state.volume(), None);

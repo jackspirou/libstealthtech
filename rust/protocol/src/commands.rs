@@ -369,7 +369,7 @@ impl Command {
 ///
 /// Notifications arrive on the UpStream characteristic (0001).
 /// Format: `CC 05/06 AA ... <response_code> <value>`
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Response {
     Volume(u8),
     CenterVolume(u8),
@@ -395,6 +395,7 @@ pub enum Response {
     },
     /// Unknown/unparseable notification data.
     Unknown {
+        #[serde(rename = "uuid")]
         characteristic_uuid: Uuid,
         data: Vec<u8>,
     },
@@ -453,6 +454,24 @@ impl fmt::Display for Response {
 }
 
 impl Response {
+    /// Returns true for audio/EQ state responses that are unreliable
+    /// during a power-off notification burst.
+    pub fn is_audio_state(&self) -> bool {
+        matches!(
+            self,
+            Response::Volume(_)
+                | Response::CenterVolume(_)
+                | Response::Treble(_)
+                | Response::Bass(_)
+                | Response::MuteState(_)
+                | Response::QuietMode(_)
+                | Response::Balance(_)
+                | Response::CurrentInput(_)
+                | Response::CurrentSoundMode(_)
+                | Response::RearVolume(_)
+        )
+    }
+
     /// Decode a BLE notification from the UpStream characteristic.
     ///
     /// Parses the last 2 bytes as `<response_code> <value>` for standard
@@ -922,6 +941,80 @@ mod tests {
         assert_eq!(Input::Bluetooth.to_byte(), 1);
         assert_eq!(Input::Aux.to_byte(), 2);
         assert_eq!(Input::Optical.to_byte(), 3);
+    }
+
+    // --- is_audio_state tests ---
+
+    #[test]
+    fn is_audio_state_true_for_audio_responses() {
+        assert!(Response::Volume(10).is_audio_state());
+        assert!(Response::CenterVolume(15).is_audio_state());
+        assert!(Response::Treble(10).is_audio_state());
+        assert!(Response::Bass(10).is_audio_state());
+        assert!(Response::MuteState(true).is_audio_state());
+        assert!(Response::QuietMode(false).is_audio_state());
+        assert!(Response::Balance(50).is_audio_state());
+        assert!(Response::CurrentInput(Input::HdmiArc).is_audio_state());
+        assert!(Response::CurrentSoundMode(SoundMode::Movies).is_audio_state());
+        assert!(Response::RearVolume(20).is_audio_state());
+    }
+
+    #[test]
+    fn is_audio_state_false_for_non_audio_responses() {
+        assert!(!Response::Power(true).is_audio_state());
+        assert!(!Response::Layout(1).is_audio_state());
+        assert!(!Response::Covering(2).is_audio_state());
+        assert!(!Response::ArmType(1).is_audio_state());
+        assert!(!Response::SubwooferConnected(true).is_audio_state());
+        assert!(!Response::FirmwareVersion {
+            fw_type: 1,
+            major: 1,
+            minor: 71
+        }
+        .is_audio_state());
+        assert!(!Response::Unknown {
+            characteristic_uuid: CHAR_UPSTREAM,
+            data: vec![0xCC]
+        }
+        .is_audio_state());
+    }
+
+    // --- Response serde round-trip tests ---
+
+    #[test]
+    fn response_serde_roundtrip() {
+        let responses = vec![
+            Response::Volume(18),
+            Response::CenterVolume(15),
+            Response::Treble(10),
+            Response::Bass(12),
+            Response::MuteState(true),
+            Response::QuietMode(false),
+            Response::Balance(50),
+            Response::Layout(2),
+            Response::CurrentInput(Input::Bluetooth),
+            Response::Power(true),
+            Response::CurrentSoundMode(SoundMode::Movies),
+            Response::Covering(3),
+            Response::ArmType(1),
+            Response::SubwooferConnected(true),
+            Response::RearVolume(20),
+            Response::FirmwareVersion {
+                fw_type: 1,
+                major: 1,
+                minor: 71,
+            },
+            Response::Unknown {
+                characteristic_uuid: CHAR_UPSTREAM,
+                data: vec![0xCC, 0x05, 0xAA],
+            },
+        ];
+
+        for response in responses {
+            let json = serde_json::to_string(&response).unwrap();
+            let deserialized: Response = serde_json::from_str(&json).unwrap();
+            assert_eq!(response, deserialized, "round-trip failed for: {json}");
+        }
     }
 
     // --- UUID tests ---
