@@ -544,6 +544,19 @@ main {
     padding: 0 12px;
 }
 
+.btn-forget {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.btn-forget:hover {
+    color: var(--danger);
+}
+
 .btn-secondary {
     background: var(--bg-input);
     color: var(--text-primary);

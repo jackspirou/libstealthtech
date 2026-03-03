@@ -21,12 +21,15 @@ const $ = ST.$;
 
 const connectBtn = $("#connect-btn");
 const reconnectBtn = $("#reconnect-btn");
+const btForgetBtn = $("#bt-forget-btn");
 const dividerOr = $("#divider-or");
 const compatBanner = $("#compat-banner");
 const connectionPanel = $("#connection-panel");
 const connectingIndicator = $("#connecting-indicator");
 const connectingText = $("#connecting-text");
 const connectionControls = $("#connection-controls");
+
+const BT_DEVICE_KEY = "stealthtech-last-bt-device";
 
 // ---------- BLE state ----------
 
@@ -93,20 +96,32 @@ checkBrowserCompat();
 // ---------- Auto-reconnect previously paired devices ----------
 
 async function checkPreviousDevices() {
-    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
-
-    try {
-        const devices = await navigator.bluetooth.getDevices();
-        const prev = devices.find((d) => d.name && /stealthtech|lovesac|sound.*charge|hk_lovesac|ee4034/i.test(d.name));
-        if (prev) {
-            bleDevice = prev;
-            bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
-            reconnectBtn.style.display = "";
-            dividerOr.style.display = "";
-            reconnectBtn.textContent = "Reconnect to " + prev.name;
+    // Try the Web Bluetooth getDevices() API first
+    if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+        try {
+            const devices = await navigator.bluetooth.getDevices();
+            const prev = devices.find((d) => d.name && /stealthtech|lovesac|sound.*charge|hk_lovesac|ee4034/i.test(d.name));
+            if (prev) {
+                bleDevice = prev;
+                bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
+                reconnectBtn.style.display = "";
+                dividerOr.style.display = "";
+                btForgetBtn.style.display = "";
+                reconnectBtn.textContent = "Reconnect to " + prev.name;
+                return;
+            }
+        } catch (e) {
+            // getDevices() not supported or no permissions -- ignore
         }
-    } catch (e) {
-        // getDevices() not supported or no permissions -- ignore
+    }
+
+    // Fall back to localStorage for browsers where getDevices() is unavailable
+    const savedName = localStorage.getItem(BT_DEVICE_KEY);
+    if (savedName) {
+        reconnectBtn.style.display = "";
+        dividerOr.style.display = "";
+        btForgetBtn.style.display = "";
+        reconnectBtn.textContent = "Reconnect to " + savedName;
     }
 }
 
@@ -267,8 +282,8 @@ async function connect() {
 
 async function reconnect() {
     if (!bleDevice || !bleDevice.gatt) {
-        ST.showError("No previous device to reconnect to");
-        return;
+        // localStorage-only case: open the native device picker
+        return connect();
     }
 
     try {
@@ -309,9 +324,13 @@ async function reconnect() {
 function onConnected() {
     bleConnected = true;
 
+    // Persist device name for reconnect across refresh
+    localStorage.setItem(BT_DEVICE_KEY, bleDevice.name || "");
+
     // Prepare controls for next disconnect (reconnect available)
     reconnectBtn.style.display = "";
     dividerOr.style.display = "";
+    btForgetBtn.style.display = "";
     reconnectBtn.textContent = "Reconnect to " + (bleDevice.name || "device");
 
     ST.updateUI({ connected: true, name: bleDevice.name || null });
@@ -338,6 +357,13 @@ async function disconnect() {
 
 connectBtn.addEventListener("click", connect);
 reconnectBtn.addEventListener("click", reconnect);
+btForgetBtn.addEventListener("click", function () {
+    localStorage.removeItem(BT_DEVICE_KEY);
+    bleDevice = null;
+    reconnectBtn.style.display = "none";
+    dividerOr.style.display = "none";
+    btForgetBtn.style.display = "none";
+});
 
 // ---------- Notification handler ----------
 

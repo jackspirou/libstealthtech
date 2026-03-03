@@ -14,6 +14,7 @@
 
     var scanBtn = $("#scan-btn");
     var serverReconnectBtn = $("#server-reconnect-btn");
+    var serverForgetBtn = $("#server-forget-btn");
     var serverDividerOr = $("#server-divider-or");
     var deviceList = $("#device-list");
     var connectionPanel = $("#connection-panel");
@@ -139,6 +140,7 @@
         serverReconnectBtn.textContent = "Reconnect to " + label;
         serverReconnectBtn.style.display = "";
         serverDividerOr.style.display = "";
+        serverForgetBtn.style.display = "";
     }
 
     async function autoReconnect() {
@@ -158,6 +160,12 @@
     }
 
     serverReconnectBtn.addEventListener("click", autoReconnect);
+    serverForgetBtn.addEventListener("click", function () {
+        localStorage.removeItem(LAST_DEVICE_KEY);
+        serverReconnectBtn.style.display = "none";
+        serverDividerOr.style.display = "none";
+        serverForgetBtn.style.display = "none";
+    });
 
     // ---------- Scan ----------
 
@@ -225,6 +233,7 @@
                 serverReconnectBtn.textContent = "Reconnect to " + (state.name || address);
                 serverReconnectBtn.style.display = "";
                 serverDividerOr.style.display = "";
+                serverForgetBtn.style.display = "";
             }
             ST.addLogEntry("Connected to " + (state.name || address));
         } catch (e) {
