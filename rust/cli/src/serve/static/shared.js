@@ -41,6 +41,7 @@
     var profileNameInput = $("#profile-name-input");
     var saveProfileBtn = $("#save-profile-btn");
     var profileHint = $("#profile-hint");
+    var profileSaveRow = $("#profile-save-row");
 
     // ---------- Percentage display helper ----------
 
@@ -97,14 +98,18 @@
             root.setAttribute("data-theme", theme);
         }
 
-        themeIcon.textContent = theme === "auto" ? "\u2699" : theme === "light" ? "\u2600" : "\u263E";
+        if (themeIcon) {
+            themeIcon.textContent = theme === "auto" ? "\u2699" : theme === "light" ? "\u2600" : "\u263E";
+        }
         localStorage.setItem(THEME_KEY, theme);
     }
 
-    themeToggle.addEventListener("click", function () {
-        currentThemeIndex = (currentThemeIndex + 1) % themes.length;
-        applyTheme();
-    });
+    if (themeToggle) {
+        themeToggle.addEventListener("click", function () {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            applyTheme();
+        });
+    }
 
     initTheme();
 
@@ -195,6 +200,7 @@
 
     clearLogBtn.addEventListener("click", function () {
         logContainer.innerHTML = '<div class="log-empty" id="log-empty">No notifications yet. Connect to a device to begin.</div>';
+        logEmpty = logContainer.querySelector("#log-empty");
     });
 
     // ---------- Transport abstraction ----------
@@ -444,19 +450,16 @@
 
         // Toggles
         if (state.power != null) {
-            toggles.power.el.dataset.active = state.power;
-            toggles.power.el.textContent = state.power ? "ON" : "OFF";
+            toggles.power.el.classList.toggle("active", !!state.power);
             toggles.power.el.setAttribute("aria-pressed", state.power);
             setStandbyMode(!state.power);
         }
         if (state.mute != null) {
-            toggles.mute.el.dataset.active = state.mute;
-            toggles.mute.el.textContent = state.mute ? "ON" : "OFF";
+            toggles.mute.el.classList.toggle("active", !!state.mute);
             toggles.mute.el.setAttribute("aria-pressed", state.mute);
         }
         if (state.quiet_couch != null) {
-            toggles.quietCouch.el.dataset.active = state.quiet_couch;
-            toggles.quietCouch.el.textContent = state.quiet_couch ? "ON" : "OFF";
+            toggles.quietCouch.el.classList.toggle("active", !!state.quiet_couch);
             toggles.quietCouch.el.setAttribute("aria-pressed", state.quiet_couch);
         }
         // Input buttons (normalize both server and BLE format strings)
@@ -474,7 +477,9 @@
         // Clear active profile when a built-in mode is reported
         if (normalizedMode && normalizedMode !== "Manual" && activeProfileName !== null && !applyingProfile) {
             activeProfileName = null;
-            renderProfiles();
+            renderProfiles(); // calls updateSaveRowVisibility() internally
+        } else {
+            updateSaveRowVisibility();
         }
 
         // Config shape buttons
@@ -523,14 +528,12 @@
             if (c && c.current) parts.push(labels[key] + " " + c.current);
         });
 
-        if (parts.length > 0) {
-            var fwText = $("#connected-firmware-text");
-            if (fwText) fwText.textContent = parts.join(" / ");
+        if (parts.length > 0 && connFwText) {
+            connFwText.textContent = parts.join(" / ");
         }
 
         // Update banner with upgrade details
-        var banner = $("#firmware-update-banner");
-        if (banner) {
+        if (fwBanner) {
             if (fw.update_available) {
                 var upgrades = [];
                 components.forEach(function (key) {
@@ -542,11 +545,11 @@
                 var msg = "Firmware update available";
                 if (upgrades.length > 0) msg += ": " + upgrades.join(", ");
                 msg += ". ";
-                banner.innerHTML = msg +
+                fwBanner.innerHTML = msg +
                     '<a href="https://www.lovesac.com/stealthtech-firmware-updates" target="_blank" rel="noopener">Learn more</a>';
-                banner.style.display = "";
+                fwBanner.style.display = "";
             } else {
-                banner.style.display = "none";
+                fwBanner.style.display = "none";
             }
         }
     }
@@ -586,6 +589,7 @@
             t.send(key, value).then(function (state) {
                 slider._committed = value;
                 if (state) updateUI(state);
+                if (key !== "volume") autoUpdateActiveProfile();
                 trackSuccess();
             }).catch(function (e) {
                 if (prev != null) {
@@ -603,12 +607,11 @@
         var toggle = toggles[key];
         toggle.el.addEventListener("click", function () {
             if (key !== "power" && !devicePoweredOn) return;
-            var currentValue = toggle.el.dataset.active === "true";
+            var currentValue = toggle.el.classList.contains("active");
             var newValue = !currentValue;
 
             // Optimistic update
-            toggle.el.dataset.active = newValue;
-            toggle.el.textContent = newValue ? "ON" : "OFF";
+            toggle.el.classList.toggle("active", newValue);
             toggle.el.setAttribute("aria-pressed", newValue);
 
             var t = getActiveTransport();
@@ -618,8 +621,7 @@
                 if (state) updateUI(state);
                 trackSuccess();
             }).catch(function (e) {
-                toggle.el.dataset.active = currentValue;
-                toggle.el.textContent = currentValue ? "ON" : "OFF";
+                toggle.el.classList.toggle("active", currentValue);
                 toggle.el.setAttribute("aria-pressed", currentValue);
                 showError("Failed to toggle " + key + ": " + e.message);
             });
@@ -657,12 +659,21 @@
     $$(".btn-option[data-mode]").forEach(function (btn) {
         btn.addEventListener("click", function () {
             if (!devicePoweredOn) return;
-            var mode = btn.dataset.mode;
+            var wasActive = btn.classList.contains("active");
+            var mode = wasActive ? "manual" : btn.dataset.mode;
             var prevActive = $(".btn-option[data-mode].active");
 
             // Optimistic update
             $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
-            btn.classList.add("active");
+            if (!wasActive) btn.classList.add("active");
+
+            // Clear active profile when selecting a built-in mode
+            if (!wasActive) {
+                activeProfileName = null;
+                renderProfiles(); // calls updateSaveRowVisibility() internally
+            } else {
+                updateSaveRowVisibility();
+            }
 
             var t = getActiveTransport();
             if (!t || !t.send) return;
@@ -673,6 +684,7 @@
             }).catch(function (e) {
                 $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
                 if (prevActive) prevActive.classList.add("active");
+                updateSaveRowVisibility();
                 showError("Failed to set mode: " + e.message);
             });
         });
@@ -796,6 +808,29 @@
     var activeProfileName = null;
     var applyingProfile = false;
 
+    function updateSaveRowVisibility() {
+        if (!profileSaveRow) return;
+        var hasActiveMode = !!$(".btn-option[data-mode].active");
+        var hasActiveProfile = activeProfileName !== null;
+        var showSave = !hasActiveMode && !hasActiveProfile;
+        profileSaveRow.style.display = showSave ? "" : "none";
+        if (profileHint) profileHint.style.display = showSave && loadProfiles().length === 0 ? "" : "none";
+    }
+
+    function autoUpdateActiveProfile() {
+        if (!activeProfileName) return;
+        var profiles = loadProfiles();
+        for (var i = 0; i < profiles.length; i++) {
+            if (profiles[i].name === activeProfileName) {
+                var eq = buildProfileFromSliders();
+                eq.name = activeProfileName;
+                profiles[i] = eq;
+                saveProfilesToStorage(profiles);
+                break;
+            }
+        }
+    }
+
     function loadProfiles() {
         try {
             return JSON.parse(localStorage.getItem(PROFILES_KEY)) || [];
@@ -813,12 +848,6 @@
         var profiles = loadProfiles();
         profileButtonsContainer.innerHTML = "";
 
-        if (profiles.length === 0) {
-            if (profileHint) profileHint.style.display = "";
-            return;
-        }
-        if (profileHint) profileHint.style.display = "none";
-
         profiles.forEach(function (p) {
             var wrap = document.createElement("div");
             wrap.className = "profile-btn-wrap";
@@ -828,6 +857,11 @@
             btn.textContent = p.name;
             btn.disabled = !devicePoweredOn;
             btn.addEventListener("click", function () {
+                if (activeProfileName === p.name) {
+                    activeProfileName = null;
+                    renderProfiles();
+                    return;
+                }
                 applyProfile(p);
             });
 
@@ -848,17 +882,17 @@
             wrap.appendChild(del);
             profileButtonsContainer.appendChild(wrap);
         });
+
+        updateSaveRowVisibility();
     }
 
     function buildProfileFromSliders() {
-        var activeBtn = $(".btn-option[data-mode].active");
         return {
             bass: parseInt(sliders.bass.el.value, 10),
             treble: parseInt(sliders.treble.el.value, 10),
             balance: parseInt(sliders.balance.el.value, 10),
             centerVolume: parseInt(sliders["center-volume"].el.value, 10),
             rearVolume: parseInt(sliders["rear-volume"].el.value, 10),
-            mode: activeBtn ? activeBtn.dataset.mode : null,
         };
     }
 
@@ -870,16 +904,14 @@
         applyingProfile = true;
         activeProfileName = profile.name;
 
-        var mode = profile.mode || "manual";
-
-        // Highlight the mode button optimistically
+        // Clear mode buttons — profiles always use Manual mode
         $$(".btn-option[data-mode]").forEach(function (b) {
-            b.classList.toggle("active", profile.mode != null && b.dataset.mode === profile.mode);
+            b.classList.remove("active");
         });
         renderProfiles();
 
-        // Send mode first, then EQ values sequentially
-        t.send("mode", mode).then(function () {
+        // Send manual mode first, then EQ values sequentially
+        t.send("mode", "manual").then(function () {
             return t.send("bass", profile.bass);
         }).then(function () {
             return t.send("treble", profile.treble);
@@ -907,10 +939,62 @@
     }
 
     function deleteProfile(name) {
-        var profiles = loadProfiles().filter(function (p) { return p.name !== name; });
-        saveProfilesToStorage(profiles);
-        if (activeProfileName === name) activeProfileName = null;
-        renderProfiles();
+        showConfirm("Delete Profile", 'Delete "' + name + '"? This cannot be undone.', function () {
+            var profiles = loadProfiles().filter(function (p) { return p.name !== name; });
+            saveProfilesToStorage(profiles);
+            if (activeProfileName === name) activeProfileName = null;
+            renderProfiles();
+        });
+    }
+
+    function showModal(innerHtml) {
+        if ($(".confirm-overlay")) return null;
+        var overlay = document.createElement("div");
+        overlay.className = "confirm-overlay";
+        overlay.innerHTML =
+            '<div class="confirm-dialog">' +
+                '<button class="confirm-close" aria-label="Close">&times;</button>' +
+                innerHtml +
+            '</div>';
+
+        function close() {
+            document.removeEventListener("keydown", onKey);
+            overlay.classList.remove("visible");
+            setTimeout(function () { overlay.remove(); }, 200);
+        }
+
+        function onKey(e) {
+            if (e.key === "Escape") close();
+        }
+
+        overlay.querySelector(".confirm-close").addEventListener("click", close);
+        overlay.addEventListener("click", function (e) {
+            if (e.target === overlay) close();
+        });
+        document.addEventListener("keydown", onKey);
+
+        document.body.appendChild(overlay);
+        overlay.offsetHeight; // eslint-disable-line no-unused-expressions
+        overlay.classList.add("visible");
+
+        return { overlay: overlay, close: close };
+    }
+
+    function showConfirm(title, message, onConfirm) {
+        var m = showModal(
+            '<h3>' + escapeHtml(title) + '</h3>' +
+            '<p>' + escapeHtml(message) + '</p>' +
+            '<div class="confirm-actions">' +
+                '<button class="btn btn-secondary btn-sm confirm-no">No</button>' +
+                '<button class="btn btn-danger btn-sm confirm-yes">Yes</button>' +
+            '</div>'
+        );
+        if (!m) return;
+        m.overlay.querySelector(".confirm-no").addEventListener("click", m.close);
+        m.overlay.querySelector(".confirm-yes").addEventListener("click", function () {
+            m.close();
+            onConfirm();
+        });
     }
 
     if (saveProfileBtn) {
@@ -989,17 +1073,18 @@
         var id = card.dataset.cardId;
         if (id) {
             var state = loadCollapsed();
-            if (collapsed) {
-                state[id] = true;
-            } else {
-                delete state[id];
-            }
+            state[id] = collapsed;
             saveCollapsed(state);
         }
     }
 
     function initCollapse() {
         var state = loadCollapsed();
+
+        // Default log card to collapsed if user hasn't explicitly toggled it
+        if (!state.hasOwnProperty("log")) {
+            state["log"] = true;
+        }
 
         $$("[data-card-id]").forEach(function (card) {
             var id = card.dataset.cardId;
@@ -1032,7 +1117,7 @@
     // ---------- Card Drag-and-Drop ----------
 
     var ORDER_KEY = "stealthtech-card-order";
-    var DEFAULT_ORDER = ["connection", "system", "input", "media", "mode", "profiles", "volume", "eq", "shape", "log"];
+    var DEFAULT_ORDER = ["connection", "system", "input", "media", "mode", "volume", "eq", "shape", "log"];
 
     function loadOrder() {
         try { return JSON.parse(localStorage.getItem(ORDER_KEY)); } catch (e) { return null; }
@@ -1261,6 +1346,48 @@
     var resetBtn = $("#reset-layout-btn");
     if (resetBtn) {
         resetBtn.addEventListener("click", resetLayout);
+    }
+
+    // ---------- Settings Modal ----------
+
+    function showSettings() {
+        var theme = themes[currentThemeIndex];
+        var m = showModal(
+            '<h3>Settings</h3>' +
+            '<div class="settings-section">' +
+                '<span class="settings-label">Appearance</span>' +
+                '<div class="button-group">' +
+                    '<button class="btn btn-option settings-theme-btn' + (theme === "auto" ? " active" : "") + '" data-theme-val="auto">Auto</button>' +
+                    '<button class="btn btn-option settings-theme-btn' + (theme === "light" ? " active" : "") + '" data-theme-val="light">Light</button>' +
+                    '<button class="btn btn-option settings-theme-btn' + (theme === "dark" ? " active" : "") + '" data-theme-val="dark">Dark</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="settings-section">' +
+                '<button class="btn btn-secondary settings-reset-btn">Reset Layout</button>' +
+            '</div>'
+        );
+        if (!m) return;
+
+        var themeBtns = m.overlay.querySelectorAll(".settings-theme-btn");
+        themeBtns.forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var val = btn.getAttribute("data-theme-val");
+                currentThemeIndex = themes.indexOf(val);
+                applyTheme();
+                themeBtns.forEach(function (b) { b.classList.remove("active"); });
+                btn.classList.add("active");
+            });
+        });
+
+        m.overlay.querySelector(".settings-reset-btn").addEventListener("click", function () {
+            resetLayout();
+            m.close();
+        });
+    }
+
+    var settingsBtn = $("#settings-btn");
+    if (settingsBtn) {
+        settingsBtn.addEventListener("click", showSettings);
     }
 
     // ---------- Public API ----------

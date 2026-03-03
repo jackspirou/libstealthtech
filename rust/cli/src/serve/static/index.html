@@ -70,10 +70,7 @@
                     If this project saved you from the official app, consider buying me a coffee :)
                 </div>
             </div>
-            <button class="header-icon-btn" id="reset-layout-btn" title="Reset layout" aria-label="Reset layout">&#x21BA;</button>
-            <button class="header-icon-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
-                <span id="theme-icon">&#9788;</span>
-            </button>
+            <button class="header-icon-btn" id="settings-btn" title="Settings" aria-label="Settings">&#x2699;</button>
         </div>
     </header>
 
@@ -132,7 +129,7 @@
             </div>
         </section>
 
-        <!-- Power & Mute -->
+        <!-- System -->
         <section class="card" id="system-card" data-card-id="system">
             <div class="card-header" role="button" tabindex="0" aria-expanded="true">
                 <span class="chevron" aria-hidden="true"></span>
@@ -140,23 +137,23 @@
                 <span class="drag-handle" aria-hidden="true"></span>
             </div>
             <div class="card-body">
-            <div class="toggle-group">
-                <div class="toggle-row">
-                    <label>Power</label>
-                    <button class="toggle-btn" id="power-btn" data-active="false" aria-pressed="false">OFF</button>
-                </div>
-                <div class="toggle-row">
-                    <label>Mute</label>
-                    <button class="toggle-btn" id="mute-btn" data-active="false" aria-pressed="false">OFF</button>
-                </div>
-                <div class="toggle-row">
-                    <label>Quiet Couch</label>
-                    <button class="toggle-btn" id="quiet-couch-btn" data-active="false" aria-pressed="false">OFF</button>
-                </div>
-                <div class="toggle-row" id="subwoofer-row" style="display:none">
-                    <label>Subwoofer</label>
-                    <span class="status-badge" id="subwoofer-status">--</span>
-                </div>
+            <div class="button-group">
+                <button class="btn btn-option" id="power-btn" aria-pressed="false">Power</button>
+                <button class="btn btn-option" id="mute-btn" aria-pressed="false">Mute</button>
+                <button class="btn btn-option" id="quiet-couch-btn" aria-pressed="false">Quiet Couch</button>
+            </div>
+            <div class="subwoofer-status-row" id="subwoofer-row" style="display:none">
+                <span class="subwoofer-label">Subwoofer</span>
+                <span class="status-badge" id="subwoofer-status">--</span>
+            </div>
+            <div class="button-group" id="profile-buttons"></div>
+            <div class="profile-save-row" id="profile-save-row">
+                <input type="text" class="profile-name-input" id="profile-name-input"
+                       placeholder="Profile name" maxlength="20" aria-label="Profile name">
+                <button class="btn btn-primary btn-sm" id="save-profile-btn">Save</button>
+            </div>
+            <div class="profile-hint" id="profile-hint">
+                Adjust your EQ settings and save them as a reusable profile.
             </div>
             </div>
         </section>
@@ -208,24 +205,6 @@
                 <button class="btn btn-option" data-mode="tv" title="Balanced mode for TV shows and streaming">TV</button>
                 <button class="btn btn-option" data-mode="news" title="Enhanced dialog clarity for speech-heavy content">News</button>
             </div>
-            </div>
-        </section>
-
-        <!-- Sound Profiles -->
-        <section class="card" id="profiles-card" data-card-id="profiles">
-            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
-                <span class="chevron" aria-hidden="true"></span>
-                <h2>Sound Profiles</h2>
-                <span class="drag-handle" aria-hidden="true"></span>
-            </div>
-            <div class="card-body">
-                <div class="button-group" id="profile-buttons"></div>
-                <div class="profile-save-row" id="profile-save-row">
-                    <input type="text" class="profile-name-input" id="profile-name-input"
-                           placeholder="Profile name" maxlength="20" aria-label="Profile name">
-                    <button class="btn btn-primary btn-sm" id="save-profile-btn">Save</button>
-                </div>
-                <div class="profile-hint" id="profile-hint">Save your current sound mode and EQ settings as a reusable profile.</div>
             </div>
         </section>
 
