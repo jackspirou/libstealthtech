@@ -939,28 +939,6 @@ input[type="range"]::-moz-range-track {
     margin-bottom: 0;
 }
 
-.drag-handle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    margin: -10px 4px -10px -10px;
-    cursor: grab;
-    color: var(--text-muted);
-    font-size: 1rem;
-    letter-spacing: -2px;
-    touch-action: none;
-}
-
-.drag-handle:active {
-    cursor: grabbing;
-}
-
-[data-pinned="true"] .drag-handle {
-    visibility: hidden;
-}
-
 .chevron {
     display: inline-block;
     width: 8px;
@@ -970,11 +948,41 @@ input[type="range"]::-moz-range-track {
     transform: rotate(45deg);
     transition: transform 0.3s ease;
     flex-shrink: 0;
-    margin-left: 12px;
+    margin-right: 12px;
 }
 
 .card.collapsed .chevron {
     transform: rotate(-45deg);
+}
+
+.drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -10px -10px -10px 4px;
+    cursor: grab;
+    color: var(--text-muted);
+    touch-action: none;
+}
+
+.drag-handle::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 14px;
+    background-image: radial-gradient(circle, currentColor 1.2px, transparent 1.2px);
+    background-size: 4px 5px;
+    background-position: 0 0;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+[data-pinned="true"] .drag-handle {
+    visibility: hidden;
 }
 
 .card-body {
@@ -990,8 +998,7 @@ input[type="range"]::-moz-range-track {
 }
 
 .log-clear-btn {
-    margin-left: auto;
-    margin-right: 4px;
+    flex-shrink: 0;
 }
 
 /* Drag states */
