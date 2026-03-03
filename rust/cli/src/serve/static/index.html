@@ -44,6 +44,13 @@
       "featureList": "Volume control, Bass and treble EQ, Input source switching, Sound mode presets, Custom EQ profiles, Couch shape configuration, Bluetooth media controls, Subwoofer status"
     }
     </script>
+    <script>
+    (function(){
+      var e = document.documentElement.hasAttribute("data-export");
+      var m = e ? "bluetooth" : (localStorage.getItem("stealthtech-mode") || "server");
+      document.documentElement.dataset.initialMode = m;
+    })();
+    </script>
 </head>
 <body>
     <header>
@@ -102,7 +109,7 @@
                 <div class="device-list" id="device-list"></div>
             </div>
             <div class="compat-banner" id="compat-banner" style="display:none"></div>
-            <div id="bluetooth-connection" class="connection-mode" style="display:none">
+            <div id="bluetooth-connection" class="connection-mode">
                 <div class="connecting-indicator" id="connecting-indicator" style="display:none">
                     <div class="spinner spinner-lg"></div>
                     <span id="connecting-text">Connecting...</span>

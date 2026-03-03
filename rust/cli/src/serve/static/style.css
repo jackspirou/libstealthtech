@@ -348,6 +348,24 @@ main {
     margin-bottom: 16px;
 }
 
+/* ---------- Initial Mode (flash prevention) ---------- */
+#server-connection,
+#bluetooth-connection {
+    display: none;
+}
+
+[data-initial-mode="server"] #server-connection {
+    display: block;
+}
+
+[data-initial-mode="bluetooth"] #bluetooth-connection {
+    display: block;
+}
+
+[data-export] .mode-tabs {
+    display: none;
+}
+
 /* ---------- Mode Tabs ---------- */
 .mode-tabs {
     display: flex;
