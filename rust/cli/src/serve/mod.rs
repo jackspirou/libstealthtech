@@ -54,10 +54,15 @@ pub fn export(output: &Path) -> anyhow::Result<()> {
 
     std::fs::create_dir_all(output)?;
 
-    // Write the unified index.html (shared.js auto-hides mode tabs when app.js is absent)
-    let index_html = embed::StaticFiles::get("index.html")
+    // Write index.html, stripping the server-only app.js script tag
+    let index_raw = embed::StaticFiles::get("index.html")
         .ok_or_else(|| anyhow::anyhow!("index.html not found in embedded files"))?;
-    std::fs::write(output.join("index.html"), index_html.data.as_ref())?;
+    let index_html = String::from_utf8_lossy(index_raw.data.as_ref())
+        .lines()
+        .filter(|line| !line.contains("<!-- server-only -->"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    std::fs::write(output.join("index.html"), index_html)?;
     println!("  index.html");
 
     for file in &files {
