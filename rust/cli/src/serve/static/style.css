@@ -521,20 +521,22 @@ main {
 }
 
 .connection-controls .btn-primary {
-    padding: 14px 24px;
-    font-size: 1rem;
+    padding: 16px 28px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     border-radius: var(--radius);
-    box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
+    box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
 }
 
 .connection-controls .btn-primary:hover:not(:disabled) {
-    box-shadow: 0 4px 16px rgba(0, 113, 227, 0.4);
+    box-shadow: 0 6px 20px rgba(0, 113, 227, 0.45);
     transform: translateY(-1px);
 }
 
 .connection-controls .btn-primary:active:not(:disabled) {
     transform: translateY(0) scale(0.98);
-    box-shadow: 0 1px 4px rgba(0, 113, 227, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
 }
 
 .divider-or {
