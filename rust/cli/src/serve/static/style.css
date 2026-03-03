@@ -751,7 +751,6 @@ main {
 }
 
 .profile-btn-wrap {
-    position: relative;
     display: inline-flex;
     align-items: stretch;
 }
@@ -779,7 +778,9 @@ main {
 }
 
 .profile-btn-wrap .btn-option.active + .profile-menu-btn {
+    background: var(--accent);
     border-color: var(--accent);
+    color: #fff;
 }
 
 .profile-menu-btn:hover {
@@ -788,10 +789,7 @@ main {
 }
 
 .profile-popover {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 4px;
+    position: fixed;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);

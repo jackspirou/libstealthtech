@@ -942,7 +942,12 @@
 
     pop.appendChild(editBtn);
     pop.appendChild(delBtn);
-    menuBtn.parentNode.appendChild(pop);
+    document.body.appendChild(pop);
+
+    // Position relative to the menu button
+    var rect = menuBtn.getBoundingClientRect();
+    pop.style.top = rect.bottom + 4 + "px";
+    pop.style.left = rect.right - pop.offsetWidth + "px";
 
     function onOutsideClick(e) {
       if (!pop.contains(e.target) && e.target !== menuBtn) {
