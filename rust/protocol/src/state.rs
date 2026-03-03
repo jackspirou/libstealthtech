@@ -81,6 +81,28 @@ impl DeviceState {
     /// Call this for each `Response` decoded from the notification stream
     /// to keep the local state in sync with the device.
     pub fn apply_response(&mut self, response: &Response) {
+        // When the device is powered off, it emits a burst of stale
+        // audio-state notifications. Suppress these so consumers never
+        // see phantom values.
+        if self.power == Some(false) {
+            match response {
+                Response::Power(_) => {} // always apply
+                Response::Volume(_)
+                | Response::CenterVolume(_)
+                | Response::Treble(_)
+                | Response::Bass(_)
+                | Response::MuteState(_)
+                | Response::QuietMode(_)
+                | Response::Balance(_)
+                | Response::CurrentInput(_)
+                | Response::CurrentSoundMode(_)
+                | Response::RearVolume(_) => return,
+                // Non-audio state (physical config, firmware, subwoofer) is
+                // always valid regardless of power state.
+                _ => {}
+            }
+        }
+
         match response {
             Response::Volume(v) => self.volume = Some(*v),
             Response::CenterVolume(v) => self.center_volume = Some(*v),
@@ -141,5 +163,43 @@ impl DeviceState {
                 .is_some_and(|v| !v.is_at_least(&LATEST_EQ_VERSION));
 
         Some(outdated)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apply_response_skips_volume_when_powered_off() {
+        let mut state = DeviceState::default();
+        state.volume = Some(20);
+        state.power = Some(false);
+        state.apply_response(&Response::Volume(0));
+        assert_eq!(state.volume, Some(20)); // unchanged
+    }
+
+    #[test]
+    fn apply_response_always_applies_power() {
+        let mut state = DeviceState::default();
+        state.power = Some(false);
+        state.apply_response(&Response::Power(true));
+        assert_eq!(state.power, Some(true));
+    }
+
+    #[test]
+    fn apply_response_applies_volume_when_powered_on() {
+        let mut state = DeviceState::default();
+        state.power = Some(true);
+        state.apply_response(&Response::Volume(25));
+        assert_eq!(state.volume, Some(25));
+    }
+
+    #[test]
+    fn apply_response_applies_subwoofer_when_powered_off() {
+        let mut state = DeviceState::default();
+        state.power = Some(false);
+        state.apply_response(&Response::SubwooferConnected(true));
+        assert_eq!(state.subwoofer_connected, Some(true));
     }
 }

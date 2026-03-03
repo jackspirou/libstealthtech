@@ -429,6 +429,16 @@ impl WasmDeviceState {
             .ok_or_else(|| JsError::new("response JSON must be an object"))?;
 
         if let Some((key, val)) = obj.iter().next() {
+            // Gate stale audio-state notifications during power-off burst
+            if self.inner.power == Some(false) {
+                match key.as_str() {
+                    "Volume" | "CenterVolume" | "Treble" | "Bass" | "MuteState"
+                    | "QuietMode" | "Balance" | "CurrentInput" | "CurrentSoundMode"
+                    | "RearVolume" => return Ok(()),
+                    _ => {}
+                }
+            }
+
             match key.as_str() {
                 "Volume" => {
                     self.inner.volume = val.as_u64().and_then(|n| u8::try_from(n).ok());

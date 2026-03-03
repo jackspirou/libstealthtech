@@ -284,7 +284,9 @@
             ST.addLogEntry("[WS] Max reconnect attempts reached (" + MAX_RECONNECT_ATTEMPTS + "), giving up");
             return;
         }
-        var delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), MAX_RECONNECT_DELAY);
+        var base = 2000 * Math.pow(2, reconnectAttempts - 1);
+        var jitter = Math.round(Math.random() * 1000);
+        var delay = Math.min(base + jitter, MAX_RECONNECT_DELAY);
         setTimeout(connectWebSocket, delay);
     }
 

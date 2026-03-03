@@ -283,28 +283,18 @@
 
     // ---------- Controls enabled/disabled ----------
 
-    function setControlsEnabled(enabled) {
-        // Sliders
+    function setControlsEnabled(enabled, opts) {
+        var skipPower = opts && opts.skipPower;
         Object.keys(sliders).forEach(function (key) {
             sliders[key].el.disabled = !enabled;
         });
-        // Toggles
         Object.keys(toggles).forEach(function (key) {
+            if (skipPower && key === "power") return;
             toggles[key].el.disabled = !enabled;
         });
-        // Input source buttons
-        $$("[data-input]").forEach(function (btn) {
-            btn.disabled = !enabled;
-        });
-        // Sound mode buttons (exclude mode-tab buttons which have data-mode for tab switching)
-        $$(".btn-option[data-mode]").forEach(function (btn) {
-            btn.disabled = !enabled;
-        });
-        // Shape buttons
-        $$("[data-shape]").forEach(function (btn) {
-            btn.disabled = !enabled;
-        });
-        // Media control buttons
+        $$("[data-input]").forEach(function (btn) { btn.disabled = !enabled; });
+        $$(".btn-option[data-mode]").forEach(function (btn) { btn.disabled = !enabled; });
+        $$("[data-shape]").forEach(function (btn) { btn.disabled = !enabled; });
         var mediaBtn = $("#play-pause-btn");
         if (mediaBtn) mediaBtn.disabled = !enabled;
         var skipFwd = $("#skip-fwd-btn");
@@ -315,6 +305,18 @@
 
     // Start with controls disabled
     setControlsEnabled(false);
+
+    // ---------- Standby mode (power off) ----------
+
+    // Authoritative power state flag, distinct from the DOM attribute
+    // which may not be set before the first Power notification arrives.
+    var devicePoweredOn = false;
+
+    function setStandbyMode(standby) {
+        if (devicePoweredOn === !standby) return;
+        devicePoweredOn = !standby;
+        setControlsEnabled(!standby, { skipPower: true });
+    }
 
     // ---------- UI state updates ----------
 
@@ -397,6 +399,7 @@
                 statusDot.className = "status-dot";
                 statusText.textContent = "Disconnected";
                 setControlsEnabled(false);
+                devicePoweredOn = false;
                 document.title = "StealthTech Remote";
 
                 // Update card state
@@ -434,6 +437,7 @@
             toggles.power.el.dataset.active = state.power;
             toggles.power.el.textContent = state.power ? "ON" : "OFF";
             toggles.power.el.setAttribute("aria-pressed", state.power);
+            setStandbyMode(!state.power);
         }
         if (state.mute != null) {
             toggles.mute.el.dataset.active = state.mute;
@@ -559,6 +563,13 @@
         // Send only when the user releases the slider
         slider.el.addEventListener("change", function () {
             slider._dragging = false;
+            if (!devicePoweredOn) {
+                if (slider._committed != null) {
+                    slider.el.value = slider._committed;
+                    slider.val.textContent = toPercent(slider._committed, parseInt(slider.el.max, 10));
+                }
+                return;
+            }
             var value = parseInt(slider.el.value, 10);
             var prev = slider._committed;
             var t = getActiveTransport();
@@ -583,6 +594,7 @@
     Object.keys(toggles).forEach(function (key) {
         var toggle = toggles[key];
         toggle.el.addEventListener("click", function () {
+            if (key !== "power" && !devicePoweredOn) return;
             var currentValue = toggle.el.dataset.active === "true";
             var newValue = !currentValue;
 
@@ -610,6 +622,7 @@
 
     $$("[data-input]").forEach(function (btn) {
         btn.addEventListener("click", function () {
+            if (!devicePoweredOn) return;
             var input = btn.dataset.input;
             var prevActive = $("[data-input].active");
 
@@ -635,6 +648,7 @@
 
     $$(".btn-option[data-mode]").forEach(function (btn) {
         btn.addEventListener("click", function () {
+            if (!devicePoweredOn) return;
             var mode = btn.dataset.mode;
             var prevActive = $(".btn-option[data-mode].active");
 
@@ -660,6 +674,7 @@
 
     $$("[data-shape]").forEach(function (btn) {
         btn.addEventListener("click", function () {
+            if (!devicePoweredOn) return;
             var shape = btn.dataset.shape;
             var prevActive = $("[data-shape].active");
 
@@ -693,6 +708,7 @@
         var btn = $("#" + cfg.id);
         if (!btn) return;
         btn.addEventListener("click", function () {
+            if (!devicePoweredOn) return;
             var t = getActiveTransport();
             if (!t || !t.send) return;
 
