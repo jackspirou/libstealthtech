@@ -777,5 +777,12 @@
         showError: showError,
         $: $,
         $$: $$,
+        resetTip: function () {
+            localStorage.removeItem(TIP_ACTIONS_KEY);
+            localStorage.removeItem(TIP_DISMISSED_KEY);
+            localStorage.removeItem(TIP_CLICKED_KEY);
+            hideTip();
+            console.log("Tip counter reset");
+        },
     };
 })();

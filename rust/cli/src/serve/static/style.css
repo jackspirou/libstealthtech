@@ -230,19 +230,26 @@ header h1 {
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    background: #1d1d1f;
+    border: 1px solid #3a3a3c;
     border-radius: var(--radius-sm);
     padding: 10px 32px 10px 12px;
     font-size: 0.82rem;
-    color: var(--text-primary);
-    white-space: nowrap;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    color: #f5f5f7;
+    max-width: 280px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     z-index: 150;
     opacity: 0;
     transform: translateY(-4px);
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+[data-theme="dark"] .tip-tooltip {
+    background: #f5f5f7;
+    border: 1px solid #d2d2d7;
+    color: #1d1d1f;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .tip-tooltip.visible {
@@ -257,10 +264,16 @@ header h1 {
     right: 12px;
     width: 10px;
     height: 10px;
-    background: var(--bg-card);
-    border-top: 1px solid var(--border);
-    border-left: 1px solid var(--border);
+    background: #1d1d1f;
+    border-top: 1px solid #3a3a3c;
+    border-left: 1px solid #3a3a3c;
     transform: rotate(45deg);
+}
+
+[data-theme="dark"] .tip-tooltip-arrow {
+    background: #f5f5f7;
+    border-top: 1px solid #d2d2d7;
+    border-left: 1px solid #d2d2d7;
 }
 
 .tip-tooltip-close {
@@ -277,7 +290,15 @@ header h1 {
 }
 
 .tip-tooltip-close:hover {
-    color: var(--text-primary);
+    color: #f5f5f7;
+}
+
+[data-theme="dark"] .tip-tooltip-close {
+    color: #6e6e73;
+}
+
+[data-theme="dark"] .tip-tooltip-close:hover {
+    color: #1d1d1f;
 }
 
 /* ---------- Main Layout ---------- */
