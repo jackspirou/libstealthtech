@@ -900,7 +900,7 @@
         saveProfilesToStorage(profiles);
         clearTimeout(_autoSaveToastTimer);
         _autoSaveToastTimer = setTimeout(function () {
-          showToast("Profile saved");
+          showToast("Sound Profile '" + activeProfileName + "' saved");
         }, 600);
         break;
       }
