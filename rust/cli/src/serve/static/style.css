@@ -679,6 +679,13 @@ main {
     transition: all var(--transition);
 }
 
+.btn-option:focus,
+.btn-option:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-focus-ring-color: transparent;
+}
+
 .btn-option:hover {
     border-color: var(--accent);
     color: var(--accent);
