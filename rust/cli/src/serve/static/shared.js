@@ -567,6 +567,7 @@
             t.send(key, value).then(function (state) {
                 slider._committed = value;
                 if (state) updateUI(state);
+                trackSuccess();
             }).catch(function (e) {
                 if (prev != null) {
                     slider.el.value = prev;
@@ -595,6 +596,7 @@
 
             t.send(key, newValue).then(function (state) {
                 if (state) updateUI(state);
+                trackSuccess();
             }).catch(function (e) {
                 toggle.el.dataset.active = currentValue;
                 toggle.el.textContent = currentValue ? "ON" : "OFF";
@@ -620,6 +622,7 @@
 
             t.send("input", input).then(function (state) {
                 if (state) updateUI(state);
+                trackSuccess();
             }).catch(function (e) {
                 $$("[data-input]").forEach(function (b) { b.classList.remove("active"); });
                 if (prevActive) prevActive.classList.add("active");
@@ -644,6 +647,7 @@
 
             t.send("mode", mode).then(function (state) {
                 if (state) updateUI(state);
+                trackSuccess();
             }).catch(function (e) {
                 $$(".btn-option[data-mode]").forEach(function (b) { b.classList.remove("active"); });
                 if (prevActive) prevActive.classList.add("active");
@@ -668,6 +672,7 @@
 
             t.send("config-shape", shape).then(function (state) {
                 if (state) updateUI(state);
+                trackSuccess();
             }).catch(function (e) {
                 $$("[data-shape]").forEach(function (b) { b.classList.remove("active"); });
                 if (prevActive) prevActive.classList.add("active");
@@ -691,7 +696,9 @@
             var t = getActiveTransport();
             if (!t || !t.send) return;
 
-            t.send(cfg.action, cfg.value).catch(function (e) {
+            t.send(cfg.action, cfg.value).then(function () {
+                trackSuccess();
+            }).catch(function (e) {
                 showError(cfg.label + " failed: " + e.message);
             });
         });
@@ -704,6 +711,58 @@
         deviceDisconnectBtn.addEventListener("click", function () {
             var t = getActiveTransport();
             if (t && t.disconnect) t.disconnect();
+        });
+    }
+
+    // ---------- Tip tooltip ----------
+
+    var TIP_ACTIONS_KEY = "stealthtech-tip-actions";
+    var TIP_DISMISSED_KEY = "stealthtech-tip-dismissed-count";
+    var TIP_CLICKED_KEY = "stealthtech-tip-clicked";
+    var FIRST_SHOW = 5;
+    var RESHOW_GAP = 25;
+
+    var tipTooltip = $("#tip-tooltip");
+    var tipClose = $("#tip-tooltip-close");
+    var kofiLink = $("#kofi-link");
+
+    function getTipCount() {
+        return parseInt(localStorage.getItem(TIP_ACTIONS_KEY) || "0", 10);
+    }
+
+    function trackSuccess() {
+        if (localStorage.getItem(TIP_CLICKED_KEY)) return;
+        var count = getTipCount() + 1;
+        localStorage.setItem(TIP_ACTIONS_KEY, count);
+
+        var dismissed = parseInt(localStorage.getItem(TIP_DISMISSED_KEY) || "0", 10);
+        if (dismissed === 0 && count >= FIRST_SHOW) {
+            showTip();
+        } else if (dismissed > 0 && count >= dismissed + RESHOW_GAP) {
+            showTip();
+        }
+    }
+
+    function showTip() {
+        if (tipTooltip) tipTooltip.classList.add("visible");
+    }
+
+    function hideTip() {
+        if (tipTooltip) tipTooltip.classList.remove("visible");
+    }
+
+    if (tipClose) {
+        tipClose.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.setItem(TIP_DISMISSED_KEY, getTipCount());
+            hideTip();
+        });
+    }
+
+    if (kofiLink) {
+        kofiLink.addEventListener("click", function () {
+            localStorage.setItem(TIP_CLICKED_KEY, "1");
+            hideTip();
         });
     }
 

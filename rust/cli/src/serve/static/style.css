@@ -204,6 +204,10 @@ header h1 {
     background: var(--border);
 }
 
+.kofi-wrap {
+    position: relative;
+}
+
 .kofi-link {
     background: var(--bg-input);
     border: 1px solid var(--border);
@@ -220,6 +224,60 @@ header h1 {
 
 .kofi-link:hover {
     background: var(--border);
+}
+
+.tip-tooltip {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 32px 10px 12px;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 150;
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.tip-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.tip-tooltip-arrow {
+    position: absolute;
+    top: -6px;
+    right: 12px;
+    width: 10px;
+    height: 10px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    transform: rotate(45deg);
+}
+
+.tip-tooltip-close {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+}
+
+.tip-tooltip-close:hover {
+    color: var(--text-primary);
 }
 
 /* ---------- Main Layout ---------- */
