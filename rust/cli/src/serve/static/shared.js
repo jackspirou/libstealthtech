@@ -1629,6 +1629,17 @@
         '<div class="settings-section">' +
         '<span class="settings-label">Tips</span>' +
         '<button class="btn btn-secondary settings-reset-tip-btn">Reset Tip Memory</button>' +
+        "</div>" +
+        '<div class="settings-section">' +
+        '<span class="settings-label">Saved Devices</span>' +
+        '<button class="btn btn-secondary settings-forget-devices-btn">Forget Saved Devices</button>' +
+        "</div>" +
+        '<div class="settings-section">' +
+        '<span class="settings-label">Sound Profiles</span>' +
+        '<button class="btn btn-secondary settings-clear-profiles-btn">Clear Sound Profiles</button>' +
+        "</div>" +
+        '<div class="settings-section">' +
+        '<button class="btn btn-danger settings-reset-all-btn">Reset All</button>' +
         "</div>",
     );
     if (!m) return;
@@ -1653,6 +1664,21 @@
 
     m.overlay.querySelector(".settings-reset-tip-btn").addEventListener("click", function () {
       StealthTech.resetTip();
+      m.close();
+    });
+
+    m.overlay.querySelector(".settings-forget-devices-btn").addEventListener("click", function () {
+      StealthTech.forgetDevices();
+      m.close();
+    });
+
+    m.overlay.querySelector(".settings-clear-profiles-btn").addEventListener("click", function () {
+      StealthTech.clearProfiles();
+      m.close();
+    });
+
+    m.overlay.querySelector(".settings-reset-all-btn").addEventListener("click", function () {
+      StealthTech.resetAll();
       m.close();
     });
   }
@@ -1680,7 +1706,34 @@
       localStorage.removeItem(TIP_DISMISSED_KEY);
       localStorage.removeItem(TIP_CLICKED_KEY);
       hideTip();
-      console.log("Tip counter reset");
+    },
+    forgetDevices: function () {
+      localStorage.removeItem("stealthtech-last-device");
+      localStorage.removeItem("stealthtech-last-bt-device");
+      var srb = $("#server-reconnect-btn");
+      var sfb = $("#server-forget-btn");
+      var sdo = $("#server-divider-or");
+      var rb = $("#reconnect-btn");
+      var bf = $("#bt-forget-btn");
+      var dor = $("#divider-or");
+      if (srb) srb.style.display = "none";
+      if (sfb) sfb.style.display = "none";
+      if (sdo) sdo.style.display = "none";
+      if (rb) rb.style.display = "none";
+      if (bf) bf.style.display = "none";
+      if (dor) dor.style.display = "none";
+    },
+    clearProfiles: function () {
+      localStorage.removeItem(PROFILES_KEY);
+      activeProfileName = null;
+      renderProfiles();
+      updateSaveRowVisibility();
+    },
+    resetAll: function () {
+      StealthTech.resetLayout();
+      StealthTech.resetTip();
+      StealthTech.forgetDevices();
+      StealthTech.clearProfiles();
     },
     resetLayout: resetLayout,
   };

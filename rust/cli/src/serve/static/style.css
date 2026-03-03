@@ -962,7 +962,10 @@ main {
 }
 
 .settings-reset-btn,
-.settings-reset-tip-btn {
+.settings-reset-tip-btn,
+.settings-forget-devices-btn,
+.settings-clear-profiles-btn,
+.settings-reset-all-btn {
     width: 100%;
 }
 
