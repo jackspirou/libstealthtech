@@ -689,25 +689,16 @@ main {
     border-color: var(--accent);
 }
 
-/* ---------- Subwoofer Status Row ---------- */
-.subwoofer-status-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 12px;
-}
-
-.subwoofer-label {
-    font-size: 0.9rem;
-    font-weight: 500;
+/* ---------- Subwoofer Status (inline in device info) ---------- */
+.device-identity-sub {
+    font-size: 0.8rem;
     color: var(--text-secondary);
 }
 
-/* ---------- Status Badge (subwoofer indicator) ---------- */
 .status-badge {
-    padding: 4px 12px;
+    padding: 2px 8px;
     border-radius: var(--radius-sm);
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     font-weight: 600;
 }
 
@@ -720,6 +711,7 @@ main {
     background: rgba(255, 59, 48, 0.15);
     color: var(--danger);
 }
+
 
 /* ---------- Balance L/R labels ---------- */
 .slider-label-left, .slider-label-right {
