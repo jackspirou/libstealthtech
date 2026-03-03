@@ -135,7 +135,6 @@
             <div class="card-header" role="button" tabindex="0" aria-expanded="true">
                 <span class="chevron" aria-hidden="true"></span>
                 <h2>System</h2>
-                <button class="btn btn-small" id="new-profile-btn" style="display:none">New Sound Profile</button>
                 <span class="drag-handle" aria-hidden="true"></span>
             </div>
             <div class="card-body">
@@ -144,7 +143,20 @@
                 <button class="btn btn-option" id="mute-btn" aria-pressed="false">Mute</button>
                 <button class="btn btn-option" id="quiet-couch-btn" aria-pressed="false">Quiet Couch</button>
             </div>
+            </div>
+        </section>
+
+        <!-- Sound Profiles -->
+        <section class="card" id="profiles-card" data-card-id="profiles">
+            <div class="card-header" role="button" tabindex="0" aria-expanded="true">
+                <span class="chevron" aria-hidden="true"></span>
+                <h2>Sound Profiles</h2>
+                <button class="btn btn-small" id="new-profile-btn" style="display:none">New Sound Profile</button>
+                <span class="drag-handle" aria-hidden="true"></span>
+            </div>
+            <div class="card-body">
             <div class="button-group" id="profile-buttons"></div>
+            <div class="profile-empty" id="profile-empty">Add a new sound profile to save and quickly switch between your favorite settings.</div>
             </div>
         </section>
 

@@ -731,8 +731,11 @@ main {
 }
 
 /* ---------- Custom Profiles ---------- */
-#profile-buttons:not(:empty) {
-    margin-top: 12px;
+.profile-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
 
@@ -1224,13 +1227,13 @@ input[type="range"]::-moz-range-track {
     to { transform: rotate(360deg); }
 }
 
-/* ---------- Error toast ---------- */
-.error-toast {
+/* ---------- Toast notifications ---------- */
+.error-toast,
+.info-toast {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: var(--danger);
     color: #fff;
     padding: 12px 24px;
     border-radius: var(--radius-sm);
@@ -1243,7 +1246,16 @@ input[type="range"]::-moz-range-track {
     pointer-events: none;
 }
 
-.error-toast.visible {
+.error-toast {
+    background: var(--danger);
+}
+
+.info-toast {
+    background: var(--success);
+}
+
+.error-toast.visible,
+.info-toast.visible {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
     pointer-events: auto;

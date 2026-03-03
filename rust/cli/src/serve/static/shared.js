@@ -43,6 +43,7 @@
   // Profile elements
   var profileButtonsContainer = $("#profile-buttons");
   var newProfileBtn = $("#new-profile-btn");
+  var profileEmpty = $("#profile-empty");
 
   // ---------- Percentage display helper ----------
 
@@ -114,26 +115,30 @@
 
   initTheme();
 
-  // ---------- Error toast ----------
+  // ---------- Toast notifications ----------
 
   var toastEl = null;
   var toastTimeout = null;
 
   function showError(message) {
+    showToast(message, "error");
+  }
+
+  function showToast(message, type) {
     if (!toastEl) {
       toastEl = document.createElement("div");
-      toastEl.className = "error-toast";
       toastEl.setAttribute("role", "alert");
       document.body.appendChild(toastEl);
     }
 
+    toastEl.className = type === "error" ? "error-toast" : "info-toast";
     toastEl.textContent = message;
     toastEl.classList.add("visible");
 
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(function () {
       toastEl.classList.remove("visible");
-    }, 4000);
+    }, type === "error" ? 4000 : 2000);
   }
 
   // ---------- Notification log ----------
@@ -882,6 +887,8 @@
     newProfileBtn.style.display = activeProfileName ? "none" : "";
   }
 
+  var _autoSaveToastTimer = null;
+
   function autoUpdateActiveProfile() {
     if (!activeProfileName || applyingProfile) return;
     var profiles = loadProfiles();
@@ -891,6 +898,10 @@
         eq.name = activeProfileName;
         profiles[i] = eq;
         saveProfilesToStorage(profiles);
+        clearTimeout(_autoSaveToastTimer);
+        _autoSaveToastTimer = setTimeout(function () {
+          showToast("Profile saved");
+        }, 600);
         break;
       }
     }
@@ -1011,6 +1022,10 @@
     if (!profileButtonsContainer) return;
     var profiles = loadProfiles();
     profileButtonsContainer.innerHTML = "";
+
+    if (profileEmpty) {
+      profileEmpty.style.display = profiles.length ? "none" : "";
+    }
 
     profiles.forEach(function (p) {
       var wrap = document.createElement("div");
@@ -1350,7 +1365,7 @@
   // ---------- Card Drag-and-Drop ----------
 
   var ORDER_KEY = "stealthtech-card-order";
-  var DEFAULT_ORDER = ["connection", "system", "input", "media", "mode", "volume", "eq", "shape", "log"];
+  var DEFAULT_ORDER = ["connection", "system", "profiles", "input", "media", "mode", "volume", "eq", "shape", "log"];
 
   function loadOrder() {
     try {
