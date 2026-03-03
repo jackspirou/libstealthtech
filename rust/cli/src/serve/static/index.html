@@ -263,7 +263,15 @@
     </noscript>
 
     <script src="shared.js"></script>
-    <script src="app.js"></script>
+    <script>
+        // Load server transport only when available (skipped in exported/Pages builds)
+        fetch("app.js", { method: "HEAD" }).then(function (r) {
+            if (!r.ok) return;
+            var s = document.createElement("script");
+            s.src = "app.js";
+            document.body.appendChild(s);
+        }).catch(function () {});
+    </script>
     <script type="module" src="bluetooth.js"></script>
 </body>
 </html>
