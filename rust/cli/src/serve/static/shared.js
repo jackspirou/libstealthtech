@@ -485,6 +485,10 @@
         if (connectionSummary) connectionSummary.innerHTML = '<span class="card-summary-dot"></span>Disconnected';
         setControlsEnabled(false);
         devicePoweredOn = false;
+        _defaultInitialized = false;
+        defaultProfile = null;
+        _endTransition();
+        _profileGeneration++;
         document.title = "StealthTech Remote";
 
         // Update card state
@@ -503,15 +507,25 @@
       }
     }
 
-    // While applying/restoring a profile, check if the expected mode has arrived
-    // from the device. If so, end the transition. Skip all EQ/slider/button updates
-    // during the transition to prevent stale BLE notifications from flickering the UI.
-    if (_expectedMode) {
-      var normalizedMode = state.sound_mode ? modeNormalize[state.sound_mode] || state.sound_mode : null;
-      console.log("[updateUI] suppressed (waiting for mode:", _expectedMode, ") got:", normalizedMode);
-      if (normalizedMode === _expectedMode) _endTransition();
+    // Device-level toggles — always apply, even during profile transitions.
+    // A power-off notification is authoritative and must never be suppressed.
+    if (state.power != null) {
+      toggles.power.el.classList.toggle("active", !!state.power);
+      toggles.power.el.setAttribute("aria-pressed", state.power);
+      setStandbyMode(!state.power);
+    }
+    if (state.mute != null) {
+      toggles.mute.el.classList.toggle("active", !!state.mute);
+      toggles.mute.el.setAttribute("aria-pressed", state.mute);
+    }
+    if (state.quiet_couch != null) {
+      toggles.quietCouch.el.classList.toggle("active", !!state.quiet_couch);
+      toggles.quietCouch.el.setAttribute("aria-pressed", state.quiet_couch);
     }
 
+    // Skip EQ/slider/button updates while a profile transition is in progress.
+    // The sendProfileCommands success handler sets the correct UI state; this gate
+    // prevents stale BLE notifications from overwriting it during the settling period.
     if (!applyingProfile) {
       // Sliders (skip updates for any slider currently being dragged)
       var sliderStateKeys = {
@@ -526,21 +540,6 @@
         var val = state[sliderStateKeys[key]];
         if (val != null) setSlider(key, val);
       });
-
-      // Toggles
-      if (state.power != null) {
-        toggles.power.el.classList.toggle("active", !!state.power);
-        toggles.power.el.setAttribute("aria-pressed", state.power);
-        setStandbyMode(!state.power);
-      }
-      if (state.mute != null) {
-        toggles.mute.el.classList.toggle("active", !!state.mute);
-        toggles.mute.el.setAttribute("aria-pressed", state.mute);
-      }
-      if (state.quiet_couch != null) {
-        toggles.quietCouch.el.classList.toggle("active", !!state.quiet_couch);
-        toggles.quietCouch.el.setAttribute("aria-pressed", state.quiet_couch);
-      }
 
       // Input buttons (normalize both server and BLE format strings)
       var normalizedInput = state.input ? inputNormalize[state.input] || state.input : null;
@@ -920,8 +919,8 @@
   var applyingProfile = false;
   var defaultProfile = null;
   var _defaultInitialized = false;
-  var _expectedMode = null;
-  var _expectedModeTimer = null;
+  var _transitionTimer = null;
+  var _profileGeneration = 0;
 
   function saveActiveProfileName(name) {
     activeProfileName = name;
@@ -1148,11 +1147,11 @@
   // Single cleanup point for all profile transition exit paths.
   function _endTransition() {
     applyingProfile = false;
-    _expectedMode = null;
-    clearTimeout(_expectedModeTimer);
+    clearTimeout(_transitionTimer);
   }
 
   function sendProfileCommands(profile, onSuccess, onError) {
+    var gen = ++_profileGeneration;
     var t = getActiveTransport();
     if (!t || !t.send) {
       _endTransition();
@@ -1160,52 +1159,56 @@
       return;
     }
 
-    console.log("[sendProfileCommands] sending — soundMode:", profile.soundMode, "| input:", profile.input, "| volume:", profile.volume, "| bass:", profile.bass, "| treble:", profile.treble);
+    console.log("[sendProfileCommands] sending (gen:" + gen + ") — soundMode:", profile.soundMode, "| input:", profile.input, "| volume:", profile.volume, "| bass:", profile.bass, "| treble:", profile.treble);
 
-    // Suppress ALL updateUI state updates until the expected mode arrives from the
-    // device (cleared in updateUI) or the safety timeout fires. The success handler
-    // below sets all sliders/buttons to the correct values.
     var mode = profile.soundMode || "manual";
-    _expectedMode = modeMap[mode] || null;
-    clearTimeout(_expectedModeTimer);
-    _expectedModeTimer = setTimeout(_endTransition, 3000);
 
-    console.log("[sendProfileCommands] resolved mode:", mode, "| _expectedMode:", _expectedMode);
+    function stale() { return gen !== _profileGeneration; }
 
     var chain = Promise.resolve();
 
     if (profile.input) {
       chain = chain.then(function () {
+        if (stale()) return;
         return t.send("input", profile.input);
       });
     }
     chain = chain.then(function () {
+      if (stale()) return;
       return t.send("mode", mode);
     });
 
     if (profile.volume != null) {
       chain = chain.then(function () {
+        if (stale()) return;
         return t.send("volume", profile.volume);
       });
     }
 
     chain
       .then(function () {
+        if (stale()) return;
         return t.send("bass", profile.bass);
       })
       .then(function () {
+        if (stale()) return;
         return t.send("treble", profile.treble);
       })
       .then(function () {
+        if (stale()) return;
         return t.send("balance", profile.balance);
       })
       .then(function () {
+        if (stale()) return;
         return t.send("center-volume", profile.centerVolume);
       })
       .then(function () {
+        if (stale()) return;
         return t.send("rear-volume", profile.rearVolume);
       })
       .then(function () {
+        if (stale()) return;
+
         if (profile.volume != null) setSlider("volume", profile.volume);
         setSlider("bass", profile.bass);
         setSlider("treble", profile.treble);
@@ -1223,13 +1226,17 @@
           });
         }
 
-        // If _expectedMode is null (manual mode), clean up now since
-        // updateUI will never see a matching notification.
-        if (!_expectedMode) _endTransition();
+        // All BLE writes are complete, but the device will still send
+        // back notification confirmations for ~500-800ms.  Keep
+        // applyingProfile true so updateUI ignores those stale values,
+        // then clear after a settling window.
+        clearTimeout(_transitionTimer);
+        _transitionTimer = setTimeout(_endTransition, 800);
 
         if (onSuccess) onSuccess();
       })
       .catch(function (e) {
+        if (stale()) return;
         _endTransition();
         if (onError) onError(e);
       });
