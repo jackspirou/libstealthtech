@@ -27,8 +27,11 @@ const connectionPanel = $("#connection-panel");
 const connectingIndicator = $("#connecting-indicator");
 const connectingText = $("#connecting-text");
 const connectionControls = $("#connection-controls");
+const statusDot = $("#status-dot");
+const statusText = $("#status-text");
 
 const BT_DEVICE_KEY = "stealthtech-last-bt-device";
+const DEVICE_NAME_RE = /stealthtech|lovesac|sound.*charge|hk_lovesac|ee4034/i;
 
 function getLastBtDevice() {
     var raw = localStorage.getItem(BT_DEVICE_KEY);
@@ -49,6 +52,8 @@ let bleService = null;
 let charCache = {};
 let bleConnected = false;
 let upstreamChar = null; // tracked for listener cleanup
+let lastStoredFirmware = null;
+let lastStoredSubwoofer = null;
 
 // ---------- Browser compat gate ----------
 
@@ -129,7 +134,7 @@ async function checkPreviousDevices() {
     if (navigator.bluetooth && navigator.bluetooth.getDevices) {
         try {
             const devices = await navigator.bluetooth.getDevices();
-            const prev = devices.find((d) => d.name && /stealthtech|lovesac|sound.*charge|hk_lovesac|ee4034/i.test(d.name));
+            const prev = devices.find((d) => d.name && DEVICE_NAME_RE.test(d.name));
             if (prev) {
                 bleDevice = prev;
                 bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
@@ -189,6 +194,26 @@ const shapeEnum = {
     pit:      "Pit",
 };
 
+// ---------- BLE GATT setup ----------
+
+async function setupGatt() {
+    bleServer = await bleDevice.gatt.connect();
+    bleService = await bleServer.getPrimaryService(SERVICE_UUID);
+    charCache = {};
+
+    if (upstreamChar) {
+        upstreamChar.removeEventListener("characteristicvaluechanged", onNotification);
+    }
+    upstreamChar = await bleService.getCharacteristic(UPSTREAM_UUID);
+    await upstreamChar.startNotifications();
+    upstreamChar.addEventListener("characteristicvaluechanged", onNotification);
+}
+
+async function requestInitialState() {
+    await sendCommand('"GetState"');
+    await sendCommand('"GetFirmwareVersion"');
+}
+
 // ---------- BLE write queue ----------
 
 let writeQueue = Promise.resolve();
@@ -230,6 +255,11 @@ function send(action, value) {
 
 // ---------- Card state helpers ----------
 
+function setStatusDisconnected() {
+    statusDot.className = "status-dot";
+    statusText.textContent = "Disconnected";
+}
+
 function setCardConnecting(message) {
     if (connectionPanel) connectionPanel.dataset.state = "connecting";
     if (connectingIndicator) connectingIndicator.style.display = "";
@@ -249,8 +279,6 @@ function setCardDisconnected() {
 
 async function connect() {
     try {
-        const statusDot = $("#status-dot");
-        const statusText = $("#status-text");
         statusDot.className = "status-dot connecting";
         statusText.textContent = "Connecting...";
         setCardConnecting("Connecting...");
@@ -273,36 +301,17 @@ async function connect() {
         });
         bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
 
-        bleServer = await bleDevice.gatt.connect();
-        bleService = await bleServer.getPrimaryService(SERVICE_UUID);
-        charCache = {};
-
-        // Clean up previous listener if any
-        if (upstreamChar) {
-            upstreamChar.removeEventListener("characteristicvaluechanged", onNotification);
-        }
-        upstreamChar = await bleService.getCharacteristic(UPSTREAM_UUID);
-        await upstreamChar.startNotifications();
-        upstreamChar.addEventListener("characteristicvaluechanged", onNotification);
-
+        await setupGatt();
         onConnected();
-
-        await sendCommand('"GetState"');
-        await sendCommand('"GetFirmwareVersion"');
+        await requestInitialState();
     } catch (e) {
         if (e.name === "NotFoundError") {
-            const statusDot = $("#status-dot");
-            const statusText = $("#status-text");
-            statusDot.className = "status-dot";
-            statusText.textContent = "Disconnected";
+            setStatusDisconnected();
             setCardDisconnected();
             return;
         }
         ST.showError("Connection failed: " + e.message);
-        const statusDot = $("#status-dot");
-        const statusText = $("#status-text");
-        statusDot.className = "status-dot";
-        statusText.textContent = "Disconnected";
+        setStatusDisconnected();
         setCardDisconnected();
     }
 }
@@ -313,7 +322,7 @@ async function reconnect() {
         if (navigator.bluetooth && navigator.bluetooth.getDevices) {
             try {
                 const devices = await navigator.bluetooth.getDevices();
-                const prev = devices.find((d) => d.name && /stealthtech|lovesac|sound.*charge|hk_lovesac|ee4034/i.test(d.name));
+                const prev = devices.find((d) => d.name && DEVICE_NAME_RE.test(d.name));
                 if (prev) {
                     bleDevice = prev;
                     bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
@@ -323,40 +332,21 @@ async function reconnect() {
             }
         }
         if (!bleDevice || !bleDevice.gatt) {
-            // No way to reconnect directly — open the device picker
             return connect();
         }
     }
 
     try {
-        const statusDot = $("#status-dot");
-        const statusText = $("#status-text");
         statusDot.className = "status-dot connecting";
         statusText.textContent = "Reconnecting...";
         setCardConnecting("Reconnecting to " + (bleDevice.name || "device") + "...");
 
-        bleServer = await bleDevice.gatt.connect();
-        bleService = await bleServer.getPrimaryService(SERVICE_UUID);
-        charCache = {};
-
-        // Clean up previous listener if any
-        if (upstreamChar) {
-            upstreamChar.removeEventListener("characteristicvaluechanged", onNotification);
-        }
-        upstreamChar = await bleService.getCharacteristic(UPSTREAM_UUID);
-        await upstreamChar.startNotifications();
-        upstreamChar.addEventListener("characteristicvaluechanged", onNotification);
-
+        await setupGatt();
         onConnected();
-
-        await sendCommand('"GetState"');
-        await sendCommand('"GetFirmwareVersion"');
+        await requestInitialState();
     } catch (e) {
         ST.showError("Reconnect failed: " + e.message);
-        const statusDot = $("#status-dot");
-        const statusText = $("#status-text");
-        statusDot.className = "status-dot";
-        statusText.textContent = "Disconnected";
+        setStatusDisconnected();
         setCardDisconnected();
         showSavedDevice(getLastBtDevice() || { name: bleDevice ? bleDevice.name || "device" : "device" });
     }
@@ -431,12 +421,14 @@ function onNotification(event) {
         };
         ST.updateUI(uiState);
 
-        // Update stored device details with firmware/subwoofer
-        if (uiState.firmware || uiState.subwoofer_connected != null) {
+        // Update stored device details only when firmware/subwoofer actually change
+        var fwStr = uiState.firmware ? ST.buildFirmwareString(uiState.firmware) : null;
+        var subVal = uiState.subwoofer_connected;
+        if ((fwStr && fwStr !== lastStoredFirmware) || (subVal != null && subVal !== lastStoredSubwoofer)) {
             var stored = getLastBtDevice();
             if (stored) {
-                if (uiState.firmware) stored.firmware = ST.buildFirmwareString(uiState.firmware);
-                if (uiState.subwoofer_connected != null) stored.subwoofer = uiState.subwoofer_connected;
+                if (fwStr) { stored.firmware = fwStr; lastStoredFirmware = fwStr; }
+                if (subVal != null) { stored.subwoofer = subVal; lastStoredSubwoofer = subVal; }
                 localStorage.setItem(BT_DEVICE_KEY, JSON.stringify(stored));
             }
         }

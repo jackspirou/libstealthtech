@@ -1711,7 +1711,7 @@
     var details = "";
     if (opts.firmware) details += '<span class="device-identity-firmware">' + escapeHtml(opts.firmware) + '</span>';
     if (opts.subwoofer != null) {
-      var cls = opts.subwoofer ? "badge-muted-on" : "badge-muted-off";
+      var cls = "badge-muted";
       var txt = opts.subwoofer ? "Connected" : "Disconnected";
       details += '<span class="device-identity-sub">Subwoofer <span class="status-badge ' + cls + '">' + txt + '</span></span>';
     }
@@ -1733,7 +1733,6 @@
         '</div>' +
       '</div>';
     container.style.display = "";
-    container.style.position = "relative";
     if (opts.orEl) opts.orEl.style.display = "";
     if (opts.controlsEl) opts.controlsEl.classList.add("slim");
     container.querySelector(".btn-reconnect").addEventListener("click", opts.onReconnect);
