@@ -94,6 +94,8 @@
         if (serverConnectingIndicator) serverConnectingIndicator.style.display = "";
         if (serverConnectingText) serverConnectingText.textContent = message || "Connecting...";
         if (serverConnectionControls) serverConnectionControls.style.display = "none";
+        if (serverSavedDevice) serverSavedDevice.style.display = "none";
+        if (serverScanDivider) serverScanDivider.style.display = "none";
         deviceList.innerHTML = "";
     }
 

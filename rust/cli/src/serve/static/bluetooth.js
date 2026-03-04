@@ -235,6 +235,8 @@ function setCardConnecting(message) {
     if (connectingIndicator) connectingIndicator.style.display = "";
     if (connectingText) connectingText.textContent = message || "Connecting...";
     if (connectionControls) connectionControls.style.display = "none";
+    if (btSavedDevice) btSavedDevice.style.display = "none";
+    if (btScanDivider) btScanDivider.style.display = "none";
 }
 
 function setCardDisconnected() {
