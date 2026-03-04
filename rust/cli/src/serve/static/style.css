@@ -621,8 +621,8 @@ main {
 }
 
 .btn-forget {
-    background: var(--bg-input);
-    color: var(--text-secondary);
+    background: var(--border);
+    color: var(--text-primary);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font-size: 0.82rem;
