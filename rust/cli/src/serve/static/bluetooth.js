@@ -21,7 +21,6 @@ const $ = ST.$;
 
 const connectBtn = $("#connect-btn");
 const btSavedDevice = $("#bt-saved-device");
-const btSavedLabel = $("#bt-saved-label");
 const btScanDivider = $("#bt-scan-divider");
 const compatBanner = $("#compat-banner");
 const connectionPanel = $("#connection-panel");
@@ -111,7 +110,6 @@ function showSavedDevice(device) {
         name: device.name,
         firmware: device.firmware,
         subwoofer: device.subwoofer,
-        labelEl: btSavedLabel,
         orEl: btScanDivider,
         controlsEl: connectionControls,
         onReconnect: reconnect,
@@ -120,7 +118,6 @@ function showSavedDevice(device) {
             bleDevice = null;
             btSavedDevice.style.display = "none";
             btSavedDevice.innerHTML = "";
-            if (btSavedLabel) btSavedLabel.style.display = "none";
             if (btScanDivider) btScanDivider.style.display = "none";
             if (connectionControls) connectionControls.classList.remove("slim");
         },

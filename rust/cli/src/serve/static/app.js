@@ -14,7 +14,6 @@
 
     var scanBtn = $("#scan-btn");
     var serverSavedDevice = $("#server-saved-device");
-    var serverSavedLabel = $("#server-saved-label");
     var serverScanDivider = $("#server-scan-divider");
     var deviceList = $("#device-list");
     var connectionPanel = $("#connection-panel");
@@ -150,7 +149,6 @@
             address: lastDevice.address,
             firmware: lastDevice.firmware,
             subwoofer: lastDevice.subwoofer,
-            labelEl: serverSavedLabel,
             orEl: serverScanDivider,
             controlsEl: serverConnectionControls,
             onReconnect: autoReconnect,
@@ -158,7 +156,6 @@
                 localStorage.removeItem(LAST_DEVICE_KEY);
                 serverSavedDevice.style.display = "none";
                 serverSavedDevice.innerHTML = "";
-                if (serverSavedLabel) serverSavedLabel.style.display = "none";
                 if (serverScanDivider) serverScanDivider.style.display = "none";
                 if (serverConnectionControls) serverConnectionControls.classList.remove("slim");
             },

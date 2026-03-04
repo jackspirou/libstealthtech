@@ -615,9 +615,9 @@ main {
     color: var(--text-muted);
     font-size: 0.75rem;
     font-weight: 500;
-    height: 0;
-    overflow: visible;
-    transform: translateY(-1.1em);
+    position: absolute;
+    top: -1.2em;
+    left: 0;
 }
 
 .saved-device-actions {

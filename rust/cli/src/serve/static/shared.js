@@ -467,16 +467,12 @@
 
         // Hide saved device rows, labels, and "or" dividers while connected
         var ssd = $("#server-saved-device");
-        var ssl = $("#server-saved-label");
         var sod = $("#server-scan-divider");
         var bsd = $("#bt-saved-device");
-        var bsl = $("#bt-saved-label");
         var bod = $("#bt-scan-divider");
         if (ssd) ssd.style.display = "none";
-        if (ssl) ssl.style.display = "none";
         if (sod) sod.style.display = "none";
         if (bsd) bsd.style.display = "none";
-        if (bsl) bsl.style.display = "none";
         if (bod) bod.style.display = "none";
 
         // Set device name in the connected panel
@@ -1720,6 +1716,7 @@
       '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><circle cx="12" cy="14" r="4"/><line x1="12" y1="6" x2="12.01" y2="6"/></svg>' +
       '</div>';
     container.innerHTML =
+      '<span class="saved-label">Previous Connection:</span>' +
       '<div class="device-item">' +
         icon +
         '<div class="device-info">' +
@@ -1733,7 +1730,7 @@
         '</div>' +
       '</div>';
     container.style.display = "";
-    if (opts.labelEl) opts.labelEl.style.display = "";
+    container.style.position = "relative";
     if (opts.orEl) opts.orEl.style.display = "";
     if (opts.controlsEl) opts.controlsEl.classList.add("slim");
     container.querySelector(".btn-reconnect").addEventListener("click", opts.onReconnect);
@@ -1767,16 +1764,12 @@
       localStorage.removeItem("stealthtech-last-bt-device");
       var sd = $("#server-saved-device");
       var bd = $("#bt-saved-device");
-      var sl = $("#server-saved-label");
-      var bl = $("#bt-saved-label");
       var sod = $("#server-scan-divider");
       var bod = $("#bt-scan-divider");
       var sc = $("#server-connection-controls");
       var bc = $("#connection-controls");
       if (sd) { sd.style.display = "none"; sd.innerHTML = ""; }
       if (bd) { bd.style.display = "none"; bd.innerHTML = ""; }
-      if (sl) sl.style.display = "none";
-      if (bl) bl.style.display = "none";
       if (sod) sod.style.display = "none";
       if (bod) bod.style.display = "none";
       if (sc) sc.classList.remove("slim");
