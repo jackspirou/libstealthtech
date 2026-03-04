@@ -363,7 +363,9 @@ function onConnected() {
     // Prepare saved device row for next disconnect
     showSavedDevice(existing);
 
-    ST.updateUI({ connected: true, name: bleDevice.name || null });
+    if (ST.isActiveTransport("bluetooth")) {
+        ST.updateUI({ connected: true, name: bleDevice.name || null });
+    }
     ST.addLogEntry("Connected to " + (bleDevice.name || "device"));
 }
 
@@ -371,7 +373,9 @@ function onDisconnect() {
     bleConnected = false;
     charCache = {};
 
-    ST.updateUI({ connected: false });
+    if (ST.isActiveTransport("bluetooth")) {
+        ST.updateUI({ connected: false });
+    }
     var saved = getLastBtDevice();
     if (saved) showSavedDevice(saved);
     ST.addLogEntry("Device disconnected");
@@ -385,7 +389,9 @@ async function disconnect() {
     }
     bleConnected = false;
     charCache = {};
-    ST.updateUI({ connected: false });
+    if (ST.isActiveTransport("bluetooth")) {
+        ST.updateUI({ connected: false });
+    }
     var saved = getLastBtDevice();
     if (saved) showSavedDevice(saved);
     ST.addLogEntry("Disconnected from device");
@@ -419,7 +425,9 @@ function onNotification(event) {
             subwoofer_connected: state.subwoofer_connected(),
             firmware: fwJson ? JSON.parse(fwJson) : null,
         };
-        ST.updateUI(uiState);
+        if (ST.isActiveTransport("bluetooth")) {
+            ST.updateUI(uiState);
+        }
 
         // Update stored device details only when firmware/subwoofer actually change
         var fwStr = uiState.firmware ? ST.buildFirmwareString(uiState.firmware) : null;

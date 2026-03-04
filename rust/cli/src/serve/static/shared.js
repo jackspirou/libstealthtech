@@ -267,6 +267,10 @@
     return transports[activeMode] || null;
   }
 
+  function isActiveTransport(name) {
+    return activeMode === name;
+  }
+
   // ---------- Mode tab switching ----------
 
   var modeTabs = $$(".mode-tab");
@@ -274,35 +278,40 @@
   var serverConnection = $("#server-connection");
   var bluetoothConnection = $("#bluetooth-connection");
 
-  function switchMode(mode) {
-    var changing = mode !== activeMode;
+  var _switching = false;
 
-    // If switching away from a connected transport, disconnect first
-    if (changing) {
-      var currentTransport = getActiveTransport();
-      if (currentTransport && currentTransport.isConnected && currentTransport.isConnected()) {
-        currentTransport.disconnect();
+  async function switchMode(mode) {
+    if (_switching || mode === activeMode) return;
+    _switching = true;
+
+    try {
+      // Set activeMode FIRST so isActiveTransport guards take effect immediately
+      var oldMode = activeMode;
+      activeMode = mode;
+      localStorage.setItem("stealthtech-mode", mode);
+
+      // Update tab visuals
+      modeTabs.forEach(function (tab) {
+        tab.classList.toggle("active", tab.dataset.mode === mode);
+      });
+
+      // Show/hide connection panels
+      if (serverConnection) serverConnection.style.display = mode === "server" ? "" : "none";
+      if (bluetoothConnection) bluetoothConnection.style.display = mode === "bluetooth" ? "" : "none";
+
+      // Disconnect old transport (awaited so BLE lock is released)
+      var oldTransport = transports[oldMode];
+      if (oldTransport && oldTransport.isConnected && oldTransport.isConnected()) {
+        await oldTransport.disconnect();
       }
-    }
 
-    activeMode = mode;
-    localStorage.setItem("stealthtech-mode", mode);
-
-    // Update tab visuals
-    modeTabs.forEach(function (tab) {
-      tab.classList.toggle("active", tab.dataset.mode === mode);
-    });
-
-    // Show/hide connection panels
-    if (serverConnection) serverConnection.style.display = mode === "server" ? "" : "none";
-    if (bluetoothConnection) bluetoothConnection.style.display = mode === "bluetooth" ? "" : "none";
-
-    // Initialize the transport on first switch to this mode
-    if (changing) {
-      var newTransport = getActiveTransport();
+      // Initialize new transport (awaited so _switching guard holds until ready)
+      var newTransport = transports[mode];
       if (newTransport && newTransport.init) {
-        newTransport.init();
+        await newTransport.init();
       }
+    } finally {
+      _switching = false;
     }
   }
 
@@ -1839,6 +1848,7 @@
   window.StealthTech = {
     registerTransport: registerTransport,
     getActiveTransport: getActiveTransport,
+    isActiveTransport: isActiveTransport,
     activeMode: function () {
       return activeMode;
     },

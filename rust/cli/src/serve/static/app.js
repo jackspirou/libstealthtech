@@ -282,7 +282,7 @@
         wsConnection.onmessage = function (event) {
             try {
                 var data = JSON.parse(event.data);
-                if (data.state) {
+                if (data.state && ST.isActiveTransport("server")) {
                     connected = data.state.connected != null ? !!data.state.connected : connected;
                     ST.updateUI(data.state);
                 }
