@@ -1688,6 +1688,27 @@
     settingsBtn.addEventListener("click", showSettings);
   }
 
+  // ---------- Saved device row helper ----------
+
+  function renderSavedDevice(container, opts) {
+    var name = escapeHtml(opts.name || "device");
+    var address = opts.address ? escapeHtml(opts.address) : "";
+    container.innerHTML =
+      '<div class="device-item">' +
+        '<div class="device-info">' +
+          '<span class="device-name">' + name + '</span>' +
+          (address ? '<span class="device-address">' + address + '</span>' : '') +
+        '</div>' +
+        '<div class="saved-device-actions">' +
+          '<button class="btn btn-primary btn-sm btn-reconnect">Reconnect</button>' +
+          '<button class="btn-forget btn-forget-device">Forget</button>' +
+        '</div>' +
+      '</div>';
+    container.style.display = "";
+    container.querySelector(".btn-reconnect").addEventListener("click", opts.onReconnect);
+    container.querySelector(".btn-forget-device").addEventListener("click", opts.onForget);
+  }
+
   // ---------- Public API ----------
 
   window.StealthTech = {
@@ -1699,6 +1720,8 @@
     updateUI: updateUI,
     addLogEntry: addLogEntry,
     showError: showError,
+    escapeHtml: escapeHtml,
+    renderSavedDevice: renderSavedDevice,
     $: $,
     $$: $$,
     resetTip: function () {
@@ -1710,18 +1733,10 @@
     forgetDevices: function () {
       localStorage.removeItem("stealthtech-last-device");
       localStorage.removeItem("stealthtech-last-bt-device");
-      var srb = $("#server-reconnect-btn");
-      var sfb = $("#server-forget-btn");
-      var sdo = $("#server-divider-or");
-      var rb = $("#reconnect-btn");
-      var bf = $("#bt-forget-btn");
-      var dor = $("#divider-or");
-      if (srb) srb.style.display = "none";
-      if (sfb) sfb.style.display = "none";
-      if (sdo) sdo.style.display = "none";
-      if (rb) rb.style.display = "none";
-      if (bf) bf.style.display = "none";
-      if (dor) dor.style.display = "none";
+      var sd = $("#server-saved-device");
+      var bd = $("#bt-saved-device");
+      if (sd) { sd.style.display = "none"; sd.innerHTML = ""; }
+      if (bd) { bd.style.display = "none"; bd.innerHTML = ""; }
     },
     clearProfiles: function () {
       localStorage.removeItem(PROFILES_KEY);

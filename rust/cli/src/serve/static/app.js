@@ -13,9 +13,7 @@
     // ---------- DOM references ----------
 
     var scanBtn = $("#scan-btn");
-    var serverReconnectBtn = $("#server-reconnect-btn");
-    var serverForgetBtn = $("#server-forget-btn");
-    var serverDividerOr = $("#server-divider-or");
+    var serverSavedDevice = $("#server-saved-device");
     var deviceList = $("#device-list");
     var connectionPanel = $("#connection-panel");
     var serverConnectingIndicator = $("#server-connecting-indicator");
@@ -136,11 +134,16 @@
         var lastDevice = getLastDevice();
         if (!lastDevice) return;
 
-        var label = lastDevice.name || lastDevice.address;
-        serverReconnectBtn.textContent = "Reconnect to " + label;
-        serverReconnectBtn.style.display = "";
-        serverDividerOr.style.display = "";
-        serverForgetBtn.style.display = "";
+        ST.renderSavedDevice(serverSavedDevice, {
+            name: lastDevice.name || lastDevice.address,
+            address: lastDevice.address,
+            onReconnect: autoReconnect,
+            onForget: function () {
+                localStorage.removeItem(LAST_DEVICE_KEY);
+                serverSavedDevice.style.display = "none";
+                serverSavedDevice.innerHTML = "";
+            },
+        });
     }
 
     async function autoReconnect() {
@@ -158,14 +161,6 @@
             showReconnectOption();
         }
     }
-
-    serverReconnectBtn.addEventListener("click", autoReconnect);
-    serverForgetBtn.addEventListener("click", function () {
-        localStorage.removeItem(LAST_DEVICE_KEY);
-        serverReconnectBtn.style.display = "none";
-        serverDividerOr.style.display = "none";
-        serverForgetBtn.style.display = "none";
-    });
 
     // ---------- Scan ----------
 
@@ -191,11 +186,11 @@
                     item.className = "device-item";
                     item.innerHTML =
                         '<div class="device-info">' +
-                            '<span class="device-name">' + (device.name || "Unknown Device") + '</span>' +
-                            '<span class="device-address">' + device.address + '</span>' +
+                            '<span class="device-name">' + ST.escapeHtml(device.name || "Unknown Device") + '</span>' +
+                            '<span class="device-address">' + ST.escapeHtml(device.address) + '</span>' +
                         '</div>' +
                         '<div style="display:flex;align-items:center;gap:10px">' +
-                            '<span class="device-rssi">' + (device.rssi != null ? device.rssi + " dBm" : "") + '</span>' +
+                            '<span class="device-rssi">' + (device.rssi != null ? ST.escapeHtml(device.rssi + " dBm") : "") + '</span>' +
                             '<button class="btn btn-primary btn-connect">Connect</button>' +
                         '</div>';
 
@@ -229,11 +224,7 @@
                     address: state.address || address,
                     name: state.name || null,
                 }));
-                // Set up reconnect for next disconnect
-                serverReconnectBtn.textContent = "Reconnect to " + (state.name || address);
-                serverReconnectBtn.style.display = "";
-                serverDividerOr.style.display = "";
-                serverForgetBtn.style.display = "";
+                showReconnectOption();
             }
             ST.addLogEntry("Connected to " + (state.name || address));
         } catch (e) {
