@@ -282,6 +282,10 @@
         wsConnection.onmessage = function (event) {
             try {
                 var data = JSON.parse(event.data);
+                if (data.state) {
+                    connected = data.state.connected != null ? !!data.state.connected : connected;
+                    ST.updateUI(data.state);
+                }
                 ST.addLogEntry(data.decoded || event.data);
             } catch (e) {
                 ST.addLogEntry(event.data);

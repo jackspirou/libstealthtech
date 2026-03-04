@@ -313,11 +313,13 @@ async fn connect_device(
             {
                 let response = Response::decode(notification.uuid, &notification.value);
                 device.state_mut().apply_response(&response);
+                let device_state = DeviceStateResponse::from_device(&device);
                 let msg = serde_json::json!({
                     "type": "notification",
                     "uuid": notification.uuid.to_string(),
                     "hex": hex::encode(&notification.value),
                     "decoded": format!("{}", response),
+                    "state": device_state,
                 });
                 let _ = tx.send(msg.to_string());
             }
@@ -327,18 +329,22 @@ async fn connect_device(
             tokio::spawn(async move {
                 while let Some(notification) = stream.next().await {
                     let response = Response::decode(notification.uuid, &notification.value);
-                    // Update device state from external changes (remote, official app)
-                    {
+                    // Update device state and build the response inside the lock
+                    let device_state = {
                         let mut guard = device_arc.lock().await;
                         if let Some(ref mut dev) = *guard {
                             dev.state_mut().apply_response(&response);
+                            Some(DeviceStateResponse::from_device(dev))
+                        } else {
+                            None
                         }
-                    }
+                    };
                     let msg = serde_json::json!({
                         "type": "notification",
                         "uuid": notification.uuid.to_string(),
                         "hex": hex::encode(&notification.value),
                         "decoded": format!("{}", response),
+                        "state": device_state,
                     });
                     let _ = tx.send(msg.to_string());
                 }
