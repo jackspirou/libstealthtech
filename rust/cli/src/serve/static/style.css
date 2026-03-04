@@ -557,11 +557,36 @@ main {
     box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
 }
 
+.connection-controls.slim {
+    margin-bottom: 0;
+}
+
+.connection-controls.slim .btn {
+    max-width: none;
+}
+
+.connection-controls.slim .btn-primary {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+}
+
+.connection-controls.slim .btn-primary:hover:not(:disabled) {
+    box-shadow: none;
+    transform: none;
+}
+
+.connection-controls.slim .btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: none;
+}
+
 .divider-or {
     display: flex;
     align-items: center;
     width: 100%;
-    max-width: 320px;
     margin: 12px 0;
     color: var(--text-muted);
     font-size: 0.8rem;
@@ -581,6 +606,27 @@ main {
     padding: 0 12px;
 }
 
+.divider-label {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin: 12px 0 6px;
+}
+
+.divider-label::before,
+.divider-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.divider-label span {
+    padding: 0 12px;
+}
+
 .saved-device-actions {
     display: flex;
     align-items: center;
@@ -589,16 +635,19 @@ main {
 }
 
 .btn-forget {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 0.8rem;
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    font-weight: 600;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 6px 14px;
 }
 
 .btn-forget:hover {
     color: var(--danger);
+    border-color: var(--danger);
 }
 
 .btn-secondary {

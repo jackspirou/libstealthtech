@@ -465,6 +465,20 @@
         if (srvConnectingIndicator) srvConnectingIndicator.style.display = "none";
         if (srvConnectionControls) srvConnectionControls.style.display = "none";
 
+        // Hide saved device rows, labels, and "or" dividers while connected
+        var ssd = $("#server-saved-device");
+        var ssl = $("#server-saved-label");
+        var sod = $("#server-scan-divider");
+        var bsd = $("#bt-saved-device");
+        var bsl = $("#bt-saved-label");
+        var bod = $("#bt-scan-divider");
+        if (ssd) ssd.style.display = "none";
+        if (ssl) ssl.style.display = "none";
+        if (sod) sod.style.display = "none";
+        if (bsd) bsd.style.display = "none";
+        if (bsl) bsl.style.display = "none";
+        if (bod) bod.style.display = "none";
+
         // Set device name in the connected panel
         if (connDeviceName) connDeviceName.textContent = state.name || "StealthTech Device";
       } else {
@@ -566,20 +580,22 @@
 
   // ---------- Firmware display ----------
 
+  function buildFirmwareString(fw) {
+    var parts = [];
+    if (fw.mcu && fw.mcu.current) parts.push("MCU v" + fw.mcu.current);
+    if (fw.dsp && fw.dsp.current) parts.push("DSP v" + fw.dsp.current);
+    if (fw.eq && fw.eq.current) parts.push("EQ v" + fw.eq.current);
+    return parts.join(" / ");
+  }
+
   function updateFirmwareDisplay(fw) {
     // fw shape: { mcu: {current, latest, up_to_date}, dsp: ..., eq: ..., update_available }
     var components = ["mcu", "dsp", "eq"];
     var labels = { mcu: "MCU", dsp: "DSP", eq: "EQ" };
 
-    // Current version display
-    var parts = [];
-    components.forEach(function (key) {
-      var c = fw[key];
-      if (c && c.current) parts.push(labels[key] + " " + c.current);
-    });
-
-    if (parts.length > 0 && connFwText) {
-      connFwText.textContent = parts.join(" / ");
+    var fwStr = buildFirmwareString(fw);
+    if (fwStr && connFwText) {
+      connFwText.textContent = fwStr;
     }
 
     // Update banner with upgrade details
@@ -1693,11 +1709,19 @@
   function renderSavedDevice(container, opts) {
     var name = escapeHtml(opts.name || "device");
     var address = opts.address ? escapeHtml(opts.address) : "";
+    var details = "";
+    if (opts.firmware) details += '<span class="device-identity-firmware">' + escapeHtml(opts.firmware) + '</span>';
+    if (opts.subwoofer != null) {
+      var cls = opts.subwoofer ? "badge-connected" : "badge-disconnected";
+      var txt = opts.subwoofer ? "Connected" : "Disconnected";
+      details += '<span class="device-identity-sub">Subwoofer <span class="status-badge ' + cls + '">' + txt + '</span></span>';
+    }
     container.innerHTML =
       '<div class="device-item">' +
         '<div class="device-info">' +
           '<span class="device-name">' + name + '</span>' +
           (address ? '<span class="device-address">' + address + '</span>' : '') +
+          details +
         '</div>' +
         '<div class="saved-device-actions">' +
           '<button class="btn btn-primary btn-sm btn-reconnect">Reconnect</button>' +
@@ -1705,6 +1729,9 @@
         '</div>' +
       '</div>';
     container.style.display = "";
+    if (opts.labelEl) opts.labelEl.style.display = "";
+    if (opts.orEl) opts.orEl.style.display = "";
+    if (opts.controlsEl) opts.controlsEl.classList.add("slim");
     container.querySelector(".btn-reconnect").addEventListener("click", opts.onReconnect);
     container.querySelector(".btn-forget-device").addEventListener("click", opts.onForget);
   }
@@ -1722,6 +1749,7 @@
     showError: showError,
     escapeHtml: escapeHtml,
     renderSavedDevice: renderSavedDevice,
+    buildFirmwareString: buildFirmwareString,
     $: $,
     $$: $$,
     resetTip: function () {
@@ -1735,8 +1763,20 @@
       localStorage.removeItem("stealthtech-last-bt-device");
       var sd = $("#server-saved-device");
       var bd = $("#bt-saved-device");
+      var sl = $("#server-saved-label");
+      var bl = $("#bt-saved-label");
+      var sod = $("#server-scan-divider");
+      var bod = $("#bt-scan-divider");
+      var sc = $("#server-connection-controls");
+      var bc = $("#connection-controls");
       if (sd) { sd.style.display = "none"; sd.innerHTML = ""; }
       if (bd) { bd.style.display = "none"; bd.innerHTML = ""; }
+      if (sl) sl.style.display = "none";
+      if (bl) bl.style.display = "none";
+      if (sod) sod.style.display = "none";
+      if (bod) bod.style.display = "none";
+      if (sc) sc.classList.remove("slim");
+      if (bc) bc.classList.remove("slim");
     },
     clearProfiles: function () {
       localStorage.removeItem(PROFILES_KEY);

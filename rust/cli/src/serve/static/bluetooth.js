@@ -21,6 +21,8 @@ const $ = ST.$;
 
 const connectBtn = $("#connect-btn");
 const btSavedDevice = $("#bt-saved-device");
+const btSavedLabel = $("#bt-saved-label");
+const btScanDivider = $("#bt-scan-divider");
 const compatBanner = $("#compat-banner");
 const connectionPanel = $("#connection-panel");
 const connectingIndicator = $("#connecting-indicator");
@@ -28,6 +30,17 @@ const connectingText = $("#connecting-text");
 const connectionControls = $("#connection-controls");
 
 const BT_DEVICE_KEY = "stealthtech-last-bt-device";
+
+function getLastBtDevice() {
+    var raw = localStorage.getItem(BT_DEVICE_KEY);
+    if (!raw) return null;
+    try {
+        var obj = JSON.parse(raw);
+        return typeof obj === "object" && obj !== null ? obj : { name: raw };
+    } catch (e) {
+        return { name: raw };
+    }
+}
 
 // ---------- BLE state ----------
 
@@ -92,15 +105,24 @@ checkBrowserCompat();
 
 // ---------- Auto-reconnect previously paired devices ----------
 
-function showSavedDevice(name) {
+function showSavedDevice(device) {
+    if (typeof device === "string") device = { name: device };
     ST.renderSavedDevice(btSavedDevice, {
-        name: name,
+        name: device.name,
+        firmware: device.firmware,
+        subwoofer: device.subwoofer,
+        labelEl: btSavedLabel,
+        orEl: btScanDivider,
+        controlsEl: connectionControls,
         onReconnect: reconnect,
         onForget: function () {
             localStorage.removeItem(BT_DEVICE_KEY);
             bleDevice = null;
             btSavedDevice.style.display = "none";
             btSavedDevice.innerHTML = "";
+            if (btSavedLabel) btSavedLabel.style.display = "none";
+            if (btScanDivider) btScanDivider.style.display = "none";
+            if (connectionControls) connectionControls.classList.remove("slim");
         },
     });
 }
@@ -114,7 +136,9 @@ async function checkPreviousDevices() {
             if (prev) {
                 bleDevice = prev;
                 bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
-                showSavedDevice(prev.name);
+                var stored = getLastBtDevice() || {};
+                stored.name = prev.name;
+                showSavedDevice(stored);
                 return;
             }
         } catch (e) {
@@ -123,9 +147,9 @@ async function checkPreviousDevices() {
     }
 
     // Fall back to localStorage for browsers where getDevices() is unavailable
-    const savedName = localStorage.getItem(BT_DEVICE_KEY);
-    if (savedName) {
-        showSavedDevice(savedName);
+    const saved = getLastBtDevice();
+    if (saved) {
+        showSavedDevice(saved);
     }
 }
 
@@ -320,18 +344,20 @@ async function reconnect() {
         statusDot.className = "status-dot";
         statusText.textContent = "Disconnected";
         setCardDisconnected();
-        showSavedDevice(bleDevice ? bleDevice.name || "device" : localStorage.getItem(BT_DEVICE_KEY) || "device");
+        showSavedDevice(getLastBtDevice() || { name: bleDevice ? bleDevice.name || "device" : "device" });
     }
 }
 
 function onConnected() {
     bleConnected = true;
 
-    // Persist device name for reconnect across refresh
-    localStorage.setItem(BT_DEVICE_KEY, bleDevice.name || "");
+    // Persist device as JSON for reconnect across refresh
+    var existing = getLastBtDevice() || {};
+    existing.name = bleDevice.name || "";
+    localStorage.setItem(BT_DEVICE_KEY, JSON.stringify(existing));
 
     // Prepare saved device row for next disconnect
-    showSavedDevice(bleDevice.name || "device");
+    showSavedDevice(existing);
 
     ST.updateUI({ connected: true, name: bleDevice.name || null });
     ST.addLogEntry("Connected to " + (bleDevice.name || "device"));
@@ -384,6 +410,17 @@ function onNotification(event) {
             firmware: fwJson ? JSON.parse(fwJson) : null,
         };
         ST.updateUI(uiState);
+
+        // Update stored device details with firmware/subwoofer
+        if (uiState.firmware || uiState.subwoofer_connected != null) {
+            var stored = getLastBtDevice();
+            if (stored) {
+                if (uiState.firmware) stored.firmware = ST.buildFirmwareString(uiState.firmware);
+                if (uiState.subwoofer_connected != null) stored.subwoofer = uiState.subwoofer_connected;
+                localStorage.setItem(BT_DEVICE_KEY, JSON.stringify(stored));
+            }
+        }
+
         ST.addLogEntry(decoded);
     } catch (e) {
         ST.addLogEntry("Decode error: " + e.message);

@@ -14,6 +14,8 @@
 
     var scanBtn = $("#scan-btn");
     var serverSavedDevice = $("#server-saved-device");
+    var serverSavedLabel = $("#server-saved-label");
+    var serverScanDivider = $("#server-scan-divider");
     var deviceList = $("#device-list");
     var connectionPanel = $("#connection-panel");
     var serverConnectingIndicator = $("#server-connecting-indicator");
@@ -111,6 +113,15 @@
             connected = !!state.connected;
             ST.updateUI(state);
 
+            if (state.connected && state.firmware) {
+                var last = getLastDevice();
+                if (last) {
+                    last.firmware = ST.buildFirmwareString(state.firmware);
+                    if (state.subwoofer_connected != null) last.subwoofer = state.subwoofer_connected;
+                    localStorage.setItem(LAST_DEVICE_KEY, JSON.stringify(last));
+                }
+            }
+
             if (!state.connected) {
                 showReconnectOption();
             }
@@ -137,11 +148,19 @@
         ST.renderSavedDevice(serverSavedDevice, {
             name: lastDevice.name || lastDevice.address,
             address: lastDevice.address,
+            firmware: lastDevice.firmware,
+            subwoofer: lastDevice.subwoofer,
+            labelEl: serverSavedLabel,
+            orEl: serverScanDivider,
+            controlsEl: serverConnectionControls,
             onReconnect: autoReconnect,
             onForget: function () {
                 localStorage.removeItem(LAST_DEVICE_KEY);
                 serverSavedDevice.style.display = "none";
                 serverSavedDevice.innerHTML = "";
+                if (serverSavedLabel) serverSavedLabel.style.display = "none";
+                if (serverScanDivider) serverScanDivider.style.display = "none";
+                if (serverConnectionControls) serverConnectionControls.classList.remove("slim");
             },
         });
     }
@@ -223,6 +242,8 @@
                 localStorage.setItem(LAST_DEVICE_KEY, JSON.stringify({
                     address: state.address || address,
                     name: state.name || null,
+                    firmware: state.firmware ? ST.buildFirmwareString(state.firmware) : null,
+                    subwoofer: state.subwoofer_connected != null ? state.subwoofer_connected : null,
                 }));
                 showReconnectOption();
             }
