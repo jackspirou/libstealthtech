@@ -509,11 +509,7 @@
     if (_expectedMode) {
       var normalizedMode = state.sound_mode ? modeNormalize[state.sound_mode] || state.sound_mode : null;
       console.log("[updateUI] suppressed (waiting for mode:", _expectedMode, ") got:", normalizedMode);
-      if (normalizedMode === _expectedMode) {
-        _expectedMode = null;
-        clearTimeout(_expectedModeTimer);
-        applyingProfile = false;
-      }
+      if (normalizedMode === _expectedMode) _endTransition();
     }
 
     if (!applyingProfile) {
@@ -1103,9 +1099,6 @@
             applyingProfile = true;
             renderProfiles();
             sendProfileCommands(defaultProfile, null, function (e) {
-              applyingProfile = false;
-              _expectedMode = null;
-              clearTimeout(_expectedModeTimer);
               showError("Failed to restore defaults: " + e.message);
             });
           } else {
@@ -1152,24 +1145,30 @@
     };
   }
 
+  // Single cleanup point for all profile transition exit paths.
+  function _endTransition() {
+    applyingProfile = false;
+    _expectedMode = null;
+    clearTimeout(_expectedModeTimer);
+  }
+
   function sendProfileCommands(profile, onSuccess, onError) {
     var t = getActiveTransport();
-    if (!t || !t.send) return;
+    if (!t || !t.send) {
+      _endTransition();
+      if (onError) onError(new Error("No transport available"));
+      return;
+    }
 
     console.log("[sendProfileCommands] sending — soundMode:", profile.soundMode, "| input:", profile.input, "| volume:", profile.volume, "| bass:", profile.bass, "| treble:", profile.treble);
 
-    // Suppress ALL updateUI state updates until the expected mode arrives from the device.
-    // The success handler below sets all sliders/buttons correctly; this prevents stale
-    // BLE notifications from flickering the UI during the transition.
+    // Suppress ALL updateUI state updates until the expected mode arrives from the
+    // device (cleared in updateUI) or the safety timeout fires. The success handler
+    // below sets all sliders/buttons to the correct values.
     var mode = profile.soundMode || "manual";
     _expectedMode = modeMap[mode] || null;
     clearTimeout(_expectedModeTimer);
-    if (_expectedMode) {
-      _expectedModeTimer = setTimeout(function () {
-        _expectedMode = null;
-        applyingProfile = false;
-      }, 3000);
-    }
+    _expectedModeTimer = setTimeout(_endTransition, 3000);
 
     console.log("[sendProfileCommands] resolved mode:", mode, "| _expectedMode:", _expectedMode);
 
@@ -1224,9 +1223,14 @@
           });
         }
 
+        // If _expectedMode is null (manual mode), clean up now since
+        // updateUI will never see a matching notification.
+        if (!_expectedMode) _endTransition();
+
         if (onSuccess) onSuccess();
       })
       .catch(function (e) {
+        _endTransition();
         if (onError) onError(e);
       });
   }
@@ -1245,9 +1249,6 @@
     sendProfileCommands(profile, function () {
       trackSuccess();
     }, function (e) {
-      applyingProfile = false;
-      _expectedMode = null;
-      clearTimeout(_expectedModeTimer);
       saveActiveProfileName(null);
       renderProfiles();
       showError("Failed to apply profile: " + e.message);
