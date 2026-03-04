@@ -581,9 +581,9 @@
 
   function buildFirmwareString(fw) {
     var parts = [];
-    if (fw.mcu && fw.mcu.current) parts.push("MCU v" + fw.mcu.current);
-    if (fw.dsp && fw.dsp.current) parts.push("DSP v" + fw.dsp.current);
-    if (fw.eq && fw.eq.current) parts.push("EQ v" + fw.eq.current);
+    if (fw.mcu && fw.mcu.current) parts.push("MCU " + fw.mcu.current);
+    if (fw.dsp && fw.dsp.current) parts.push("DSP " + fw.dsp.current);
+    if (fw.eq && fw.eq.current) parts.push("EQ " + fw.eq.current);
     return parts.join(" / ");
   }
 
