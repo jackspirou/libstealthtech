@@ -1186,7 +1186,9 @@ input[type="range"]::-moz-range-track {
 }
 
 .card.collapsed .card-summary {
-    display: inline;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.82rem;
     font-weight: 500;
     color: var(--text-muted);
@@ -1194,6 +1196,18 @@ input[type="range"]::-moz-range-track {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.card-summary-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--danger);
+    flex-shrink: 0;
+}
+
+.card-summary-dot.connected {
+    background: var(--success);
 }
 
 .chevron {

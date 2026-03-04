@@ -478,11 +478,11 @@
 
         // Set device name in the connected panel
         if (connDeviceName) connDeviceName.textContent = state.name || "StealthTech Device";
-        if (connectionSummary) connectionSummary.textContent = state.name || "Connected";
+        if (connectionSummary) connectionSummary.innerHTML = '<span class="card-summary-dot connected"></span>' + escapeHtml(state.name || "Connected");
       } else {
         statusDot.className = "status-dot";
         statusText.textContent = "Disconnected";
-        if (connectionSummary) connectionSummary.textContent = "Disconnected";
+        if (connectionSummary) connectionSummary.innerHTML = '<span class="card-summary-dot"></span>Disconnected';
         setControlsEnabled(false);
         devicePoweredOn = false;
         document.title = "StealthTech Remote";
