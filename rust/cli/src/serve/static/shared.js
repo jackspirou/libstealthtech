@@ -1712,12 +1712,16 @@
     var details = "";
     if (opts.firmware) details += '<span class="device-identity-firmware">' + escapeHtml(opts.firmware) + '</span>';
     if (opts.subwoofer != null) {
-      var cls = opts.subwoofer ? "badge-connected" : "badge-disconnected";
+      var cls = opts.subwoofer ? "badge-muted-on" : "badge-muted-off";
       var txt = opts.subwoofer ? "Connected" : "Disconnected";
       details += '<span class="device-identity-sub">Subwoofer <span class="status-badge ' + cls + '">' + txt + '</span></span>';
     }
+    var icon = '<div class="device-identity-icon muted">' +
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><circle cx="12" cy="14" r="4"/><line x1="12" y1="6" x2="12.01" y2="6"/></svg>' +
+      '</div>';
     container.innerHTML =
       '<div class="device-item">' +
+        icon +
         '<div class="device-info">' +
           '<span class="device-name">' + name + '</span>' +
           (address ? '<span class="device-address">' + address + '</span>' : '') +

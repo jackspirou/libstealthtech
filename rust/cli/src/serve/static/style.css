@@ -500,6 +500,11 @@ main {
     border-radius: var(--radius-sm);
 }
 
+.device-identity-icon.muted {
+    background: rgba(142, 142, 147, 0.12);
+    color: var(--text-muted);
+}
+
 .device-identity-info {
     flex: 1;
     display: flex;
@@ -813,6 +818,15 @@ main {
     color: var(--danger);
 }
 
+.badge-muted-on {
+    background: rgba(142, 142, 147, 0.12);
+    color: var(--text-muted);
+}
+
+.badge-muted-off {
+    background: rgba(142, 142, 147, 0.12);
+    color: var(--text-muted);
+}
 
 /* ---------- Balance L/R labels ---------- */
 .slider-label-left, .slider-label-right {
