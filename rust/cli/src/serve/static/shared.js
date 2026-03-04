@@ -533,16 +533,32 @@
     }
     // Input buttons (normalize both server and BLE format strings)
     var normalizedInput = state.input ? inputNormalize[state.input] || state.input : null;
-    $$("[data-input]").forEach(function (btn) {
-      btn.classList.toggle("active", normalizedInput === inputMap[btn.dataset.input]);
-    });
+    if (_expectedInput) {
+      if (normalizedInput === _expectedInput) {
+        _expectedInput = null;
+        clearTimeout(_expectedInputTimer);
+      }
+    }
+    if (!_expectedInput) {
+      $$("[data-input]").forEach(function (btn) {
+        btn.classList.toggle("active", normalizedInput === inputMap[btn.dataset.input]);
+      });
+    }
 
     // Mode buttons (normalize both server and BLE format strings)
     var normalizedMode = state.sound_mode ? modeNormalize[state.sound_mode] || state.sound_mode : null;
-    console.log("[updateUI] sound_mode:", state.sound_mode, "→ normalized:", normalizedMode, "| applyingProfile:", applyingProfile, "| activeProfile:", activeProfileName);
-    $$(".btn-option[data-mode]").forEach(function (btn) {
-      btn.classList.toggle("active", normalizedMode === modeMap[btn.dataset.mode]);
-    });
+    console.log("[updateUI] sound_mode:", state.sound_mode, "→ normalized:", normalizedMode, "| _expectedMode:", _expectedMode, "| activeProfile:", activeProfileName);
+    if (_expectedMode) {
+      if (normalizedMode === _expectedMode) {
+        _expectedMode = null;
+        clearTimeout(_expectedModeTimer);
+      }
+    }
+    if (!_expectedMode) {
+      $$(".btn-option[data-mode]").forEach(function (btn) {
+        btn.classList.toggle("active", normalizedMode === modeMap[btn.dataset.mode]);
+      });
+    }
 
     updateSaveRowVisibility();
 
@@ -908,6 +924,10 @@
   var applyingProfile = false;
   var defaultProfile = null;
   var _defaultInitialized = false;
+  var _expectedMode = null;
+  var _expectedInput = null;
+  var _expectedModeTimer = null;
+  var _expectedInputTimer = null;
 
   function saveActiveProfileName(name) {
     activeProfileName = name;
@@ -1140,6 +1160,24 @@
 
     console.log("[sendProfileCommands] sending — soundMode:", profile.soundMode, "| input:", profile.input, "| volume:", profile.volume, "| bass:", profile.bass, "| treble:", profile.treble);
 
+    // Suppress stale BLE notifications from updating mode/input buttons
+    // until the expected state arrives (or safety timeout fires)
+    var mode = profile.soundMode || "manual";
+    _expectedMode = modeMap[mode] || null;
+    clearTimeout(_expectedModeTimer);
+    if (_expectedMode) {
+      _expectedModeTimer = setTimeout(function () { _expectedMode = null; }, 3000);
+    }
+    if (profile.input) {
+      _expectedInput = inputMap[profile.input] || null;
+      clearTimeout(_expectedInputTimer);
+      if (_expectedInput) {
+        _expectedInputTimer = setTimeout(function () { _expectedInput = null; }, 3000);
+      }
+    }
+
+    console.log("[sendProfileCommands] resolved mode:", mode, "| _expectedMode:", _expectedMode, "| _expectedInput:", _expectedInput);
+
     var chain = Promise.resolve();
 
     if (profile.input) {
@@ -1147,9 +1185,6 @@
         return t.send("input", profile.input);
       });
     }
-
-    var mode = profile.soundMode || "manual";
-    console.log("[sendProfileCommands] resolved mode:", mode, "(raw soundMode was:", profile.soundMode + ")");
     chain = chain.then(function () {
       return t.send("mode", mode);
     });
