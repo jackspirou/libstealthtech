@@ -546,8 +546,8 @@
 
     updateSaveRowVisibility();
 
-    // Capture default profile: on first connect (always) or when no named profile is active
-    if (!applyingProfile && (!defaultProfile || !activeProfileName)) {
+    // Capture default profile during initialization (connect); after that, only autoUpdateActiveProfile can update it
+    if (!_defaultInitialized && !applyingProfile) {
       var captured = buildProfileFromSliders();
       console.log("[updateUI] capturing default profile — soundMode:", captured.soundMode, "| input:", captured.input);
       defaultProfile = captured;
@@ -907,6 +907,7 @@
   var activeProfileName = null;
   var applyingProfile = false;
   var defaultProfile = null;
+  var _defaultInitialized = false;
 
   function saveActiveProfileName(name) {
     activeProfileName = name;
@@ -924,6 +925,7 @@
   function autoUpdateActiveProfile() {
     if (applyingProfile) return;
     if (!activeProfileName) {
+      _defaultInitialized = true;
       defaultProfile = buildProfileFromSliders();
       console.log("[autoUpdate] no active profile — updated default soundMode:", defaultProfile.soundMode, "| input:", defaultProfile.input);
       return;
@@ -1079,6 +1081,7 @@
           console.log("[profile] deselecting '" + p.name + "' — restoring default soundMode:", defaultProfile ? defaultProfile.soundMode : "null", "| input:", defaultProfile ? defaultProfile.input : "null");
           saveActiveProfileName(null);
           if (defaultProfile && devicePoweredOn) {
+            _defaultInitialized = true;
             applyingProfile = true;
             renderProfiles();
             sendProfileCommands(defaultProfile, function () {
@@ -1204,6 +1207,7 @@
     if (!t || !t.send) return;
 
     console.log("[applyProfile] '" + profile.name + "' — soundMode:", profile.soundMode, "| input:", profile.input, "| default soundMode:", defaultProfile ? defaultProfile.soundMode : "null");
+    _defaultInitialized = true;
     applyingProfile = true;
     saveActiveProfileName(profile.name);
     renderProfiles();
