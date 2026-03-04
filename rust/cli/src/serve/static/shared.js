@@ -503,58 +503,58 @@
       }
     }
 
-    // Sliders (skip updates for any slider currently being dragged)
-    var sliderStateKeys = {
-      volume: "volume",
-      bass: "bass",
-      treble: "treble",
-      "center-volume": "center_volume",
-      "rear-volume": "rear_channel_volume",
-      balance: "balance",
-    };
-    Object.keys(sliderStateKeys).forEach(function (key) {
-      var val = state[sliderStateKeys[key]];
-      if (val != null) setSlider(key, val);
-    });
-
-    // Toggles
-    if (state.power != null) {
-      toggles.power.el.classList.toggle("active", !!state.power);
-      toggles.power.el.setAttribute("aria-pressed", state.power);
-      setStandbyMode(!state.power);
-    }
-    if (state.mute != null) {
-      toggles.mute.el.classList.toggle("active", !!state.mute);
-      toggles.mute.el.setAttribute("aria-pressed", state.mute);
-    }
-    if (state.quiet_couch != null) {
-      toggles.quietCouch.el.classList.toggle("active", !!state.quiet_couch);
-      toggles.quietCouch.el.setAttribute("aria-pressed", state.quiet_couch);
-    }
-    // Input buttons (normalize both server and BLE format strings)
-    var normalizedInput = state.input ? inputNormalize[state.input] || state.input : null;
-    if (_expectedInput) {
-      if (normalizedInput === _expectedInput) {
-        _expectedInput = null;
-        clearTimeout(_expectedInputTimer);
-      }
-    }
-    if (!_expectedInput) {
-      $$("[data-input]").forEach(function (btn) {
-        btn.classList.toggle("active", normalizedInput === inputMap[btn.dataset.input]);
-      });
-    }
-
-    // Mode buttons (normalize both server and BLE format strings)
-    var normalizedMode = state.sound_mode ? modeNormalize[state.sound_mode] || state.sound_mode : null;
-    console.log("[updateUI] sound_mode:", state.sound_mode, "→ normalized:", normalizedMode, "| _expectedMode:", _expectedMode, "| activeProfile:", activeProfileName);
+    // While applying/restoring a profile, check if the expected mode has arrived
+    // from the device. If so, end the transition. Skip all EQ/slider/button updates
+    // during the transition to prevent stale BLE notifications from flickering the UI.
     if (_expectedMode) {
+      var normalizedMode = state.sound_mode ? modeNormalize[state.sound_mode] || state.sound_mode : null;
+      console.log("[updateUI] suppressed (waiting for mode:", _expectedMode, ") got:", normalizedMode);
       if (normalizedMode === _expectedMode) {
         _expectedMode = null;
         clearTimeout(_expectedModeTimer);
+        applyingProfile = false;
       }
     }
-    if (!_expectedMode) {
+
+    if (!applyingProfile) {
+      // Sliders (skip updates for any slider currently being dragged)
+      var sliderStateKeys = {
+        volume: "volume",
+        bass: "bass",
+        treble: "treble",
+        "center-volume": "center_volume",
+        "rear-volume": "rear_channel_volume",
+        balance: "balance",
+      };
+      Object.keys(sliderStateKeys).forEach(function (key) {
+        var val = state[sliderStateKeys[key]];
+        if (val != null) setSlider(key, val);
+      });
+
+      // Toggles
+      if (state.power != null) {
+        toggles.power.el.classList.toggle("active", !!state.power);
+        toggles.power.el.setAttribute("aria-pressed", state.power);
+        setStandbyMode(!state.power);
+      }
+      if (state.mute != null) {
+        toggles.mute.el.classList.toggle("active", !!state.mute);
+        toggles.mute.el.setAttribute("aria-pressed", state.mute);
+      }
+      if (state.quiet_couch != null) {
+        toggles.quietCouch.el.classList.toggle("active", !!state.quiet_couch);
+        toggles.quietCouch.el.setAttribute("aria-pressed", state.quiet_couch);
+      }
+
+      // Input buttons (normalize both server and BLE format strings)
+      var normalizedInput = state.input ? inputNormalize[state.input] || state.input : null;
+      $$("[data-input]").forEach(function (btn) {
+        btn.classList.toggle("active", normalizedInput === inputMap[btn.dataset.input]);
+      });
+
+      // Mode buttons (normalize both server and BLE format strings)
+      var normalizedMode = state.sound_mode ? modeNormalize[state.sound_mode] || state.sound_mode : null;
+      console.log("[updateUI] sound_mode:", state.sound_mode, "→ normalized:", normalizedMode, "| activeProfile:", activeProfileName);
       $$(".btn-option[data-mode]").forEach(function (btn) {
         btn.classList.toggle("active", normalizedMode === modeMap[btn.dataset.mode]);
       });
@@ -925,9 +925,7 @@
   var defaultProfile = null;
   var _defaultInitialized = false;
   var _expectedMode = null;
-  var _expectedInput = null;
   var _expectedModeTimer = null;
-  var _expectedInputTimer = null;
 
   function saveActiveProfileName(name) {
     activeProfileName = name;
@@ -1104,10 +1102,10 @@
             _defaultInitialized = true;
             applyingProfile = true;
             renderProfiles();
-            sendProfileCommands(defaultProfile, function () {
+            sendProfileCommands(defaultProfile, null, function (e) {
               applyingProfile = false;
-            }, function (e) {
-              applyingProfile = false;
+              _expectedMode = null;
+              clearTimeout(_expectedModeTimer);
               showError("Failed to restore defaults: " + e.message);
             });
           } else {
@@ -1160,23 +1158,20 @@
 
     console.log("[sendProfileCommands] sending — soundMode:", profile.soundMode, "| input:", profile.input, "| volume:", profile.volume, "| bass:", profile.bass, "| treble:", profile.treble);
 
-    // Suppress stale BLE notifications from updating mode/input buttons
-    // until the expected state arrives (or safety timeout fires)
+    // Suppress ALL updateUI state updates until the expected mode arrives from the device.
+    // The success handler below sets all sliders/buttons correctly; this prevents stale
+    // BLE notifications from flickering the UI during the transition.
     var mode = profile.soundMode || "manual";
     _expectedMode = modeMap[mode] || null;
     clearTimeout(_expectedModeTimer);
     if (_expectedMode) {
-      _expectedModeTimer = setTimeout(function () { _expectedMode = null; }, 3000);
-    }
-    if (profile.input) {
-      _expectedInput = inputMap[profile.input] || null;
-      clearTimeout(_expectedInputTimer);
-      if (_expectedInput) {
-        _expectedInputTimer = setTimeout(function () { _expectedInput = null; }, 3000);
-      }
+      _expectedModeTimer = setTimeout(function () {
+        _expectedMode = null;
+        applyingProfile = false;
+      }, 3000);
     }
 
-    console.log("[sendProfileCommands] resolved mode:", mode, "| _expectedMode:", _expectedMode, "| _expectedInput:", _expectedInput);
+    console.log("[sendProfileCommands] resolved mode:", mode, "| _expectedMode:", _expectedMode);
 
     var chain = Promise.resolve();
 
@@ -1248,10 +1243,11 @@
     renderProfiles();
 
     sendProfileCommands(profile, function () {
-      applyingProfile = false;
       trackSuccess();
     }, function (e) {
       applyingProfile = false;
+      _expectedMode = null;
+      clearTimeout(_expectedModeTimer);
       saveActiveProfileName(null);
       renderProfiles();
       showError("Failed to apply profile: " + e.message);
