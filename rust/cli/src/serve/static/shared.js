@@ -489,6 +489,8 @@
         defaultProfile = null;
         _endTransition();
         _profileGeneration++;
+        saveActiveProfileName(null);
+        renderProfiles();
         document.title = "StealthTech Remote";
 
         // Update card state
