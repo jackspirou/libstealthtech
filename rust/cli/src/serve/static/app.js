@@ -112,7 +112,9 @@
         try {
             var state = await apiGet("/api/state");
             connected = !!state.connected;
-            ST.updateUI(state);
+            if (ST.isActiveTransport("server")) {
+                ST.updateUI(state);
+            }
 
             if (state.connected && state.firmware) {
                 var last = getLastDevice();
@@ -235,7 +237,9 @@
         try {
             var state = await apiPost("/api/connect", { address: address });
             connected = !!state.connected;
-            ST.updateUI(state);
+            if (ST.isActiveTransport("server")) {
+                ST.updateUI(state);
+            }
             deviceList.innerHTML = "";
             if (state.connected) {
                 localStorage.setItem(LAST_DEVICE_KEY, JSON.stringify({
@@ -258,8 +262,10 @@
         try {
             var state = await apiPost("/api/disconnect", {});
             connected = false;
-            ST.updateUI(state);
-            showReconnectOption();
+            if (ST.isActiveTransport("server")) {
+                ST.updateUI(state);
+                showReconnectOption();
+            }
             ST.addLogEntry("Disconnected from device");
         } catch (e) {
             ST.showError("Disconnect failed: " + e.message);

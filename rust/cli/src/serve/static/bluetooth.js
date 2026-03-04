@@ -54,6 +54,7 @@ let bleConnected = false;
 let upstreamChar = null; // tracked for listener cleanup
 let lastStoredFirmware = null;
 let lastStoredSubwoofer = null;
+let _intentionalDisconnect = false;
 
 // ---------- Browser compat gate ----------
 
@@ -224,7 +225,7 @@ function sendCommand(cmdJson) {
         if (!charCache[encoded.uuid]) {
             charCache[encoded.uuid] = await bleService.getCharacteristic(encoded.uuid);
         }
-        await charCache[encoded.uuid].writeValue(new Uint8Array(encoded.data));
+        await charCache[encoded.uuid].writeValueWithoutResponse(new Uint8Array(encoded.data));
     });
     // Keep the queue going even if one command fails
     writeQueue = result.catch(() => {});
@@ -373,28 +374,71 @@ function onDisconnect() {
     bleConnected = false;
     charCache = {};
 
-    if (ST.isActiveTransport("bluetooth")) {
-        ST.updateUI({ connected: false });
+    if (_intentionalDisconnect) {
+        _intentionalDisconnect = false;
+        if (ST.isActiveTransport("bluetooth")) {
+            ST.updateUI({ connected: false });
+        }
+        var saved = getLastBtDevice();
+        if (saved) showSavedDevice(saved);
+        ST.addLogEntry("Device disconnected");
+        return;
     }
-    var saved = getLastBtDevice();
-    if (saved) showSavedDevice(saved);
-    ST.addLogEntry("Device disconnected");
+
+    // Unexpected disconnect — auto-reconnect
+    ST.addLogEntry("Connection lost, reconnecting...");
+    setCardConnecting("Reconnecting...");
+    statusDot.className = "status-dot connecting";
+    statusText.textContent = "Reconnecting...";
+    autoReconnect(0);
 }
 
 async function disconnect() {
+    _intentionalDisconnect = true;
     if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
         // onDisconnect handler will fire via gattserverdisconnected event
         return;
     }
+    // Fallback cleanup (no gattserverdisconnected event will fire)
     bleConnected = false;
     charCache = {};
+    _intentionalDisconnect = false;
     if (ST.isActiveTransport("bluetooth")) {
         ST.updateUI({ connected: false });
     }
     var saved = getLastBtDevice();
     if (saved) showSavedDevice(saved);
     ST.addLogEntry("Disconnected from device");
+}
+
+// ---------- Auto-reconnect on unexpected disconnect ----------
+
+var MAX_AUTO_RECONNECT = 3;
+var AUTO_RECONNECT_DELAYS = [1500, 3000, 5000];
+
+function autoReconnect(attempt) {
+    if (attempt >= MAX_AUTO_RECONNECT) {
+        if (ST.isActiveTransport("bluetooth")) {
+            ST.updateUI({ connected: false });
+        }
+        var saved = getLastBtDevice();
+        if (saved) showSavedDevice(saved);
+        ST.addLogEntry("Reconnect failed after " + MAX_AUTO_RECONNECT + " attempts");
+        return;
+    }
+
+    var delay = AUTO_RECONNECT_DELAYS[attempt] || 5000;
+    setTimeout(async function () {
+        try {
+            await setupGatt();
+            onConnected();
+            await requestInitialState();
+        } catch (e) {
+            ST.addLogEntry("Reconnect attempt " + (attempt + 1) + " failed");
+            autoReconnect(attempt + 1);
+        }
+    }, delay);
 }
 
 connectBtn.addEventListener("click", connect);
