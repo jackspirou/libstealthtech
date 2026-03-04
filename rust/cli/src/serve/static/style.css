@@ -615,8 +615,8 @@ main {
 
 .saved-device-actions {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 6px;
     flex-shrink: 0;
 }
 
@@ -625,10 +625,11 @@ main {
     color: var(--text-secondary);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
     padding: 6px 14px;
+    text-align: center;
 }
 
 .btn-forget:hover {
