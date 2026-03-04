@@ -549,7 +549,6 @@
 
       // Mode buttons (normalize both server and BLE format strings)
       var normalizedMode = state.sound_mode ? modeNormalize[state.sound_mode] || state.sound_mode : null;
-      console.log("[updateUI] sound_mode:", state.sound_mode, "→ normalized:", normalizedMode, "| activeProfile:", activeProfileName);
       $$(".btn-option[data-mode]").forEach(function (btn) {
         btn.classList.toggle("active", normalizedMode === modeMap[btn.dataset.mode]);
       });
@@ -560,7 +559,6 @@
     // Capture default profile during initialization (connect); after that, only autoUpdateActiveProfile can update it
     if (!_defaultInitialized && !applyingProfile) {
       var captured = buildProfileFromSliders();
-      console.log("[updateUI] capturing default profile — soundMode:", captured.soundMode, "| input:", captured.input);
       defaultProfile = captured;
     }
 
@@ -760,7 +758,6 @@
       if (!devicePoweredOn) return;
       var wasActive = btn.classList.contains("active");
       var mode = wasActive ? "manual" : btn.dataset.mode;
-      console.log("[modeBtn] clicked:", btn.dataset.mode, "| wasActive:", wasActive, "| sending mode:", mode);
       var prevActive = $(".btn-option[data-mode].active");
 
       // Optimistic update
@@ -940,7 +937,6 @@
     if (!activeProfileName) {
       _defaultInitialized = true;
       defaultProfile = buildProfileFromSliders();
-      console.log("[autoUpdate] no active profile — updated default soundMode:", defaultProfile.soundMode, "| input:", defaultProfile.input);
       return;
     }
     var profiles = loadProfiles();
@@ -1091,7 +1087,6 @@
       btn.disabled = !devicePoweredOn;
       btn.addEventListener("click", function () {
         if (activeProfileName === p.name) {
-          console.log("[profile] deselecting '" + p.name + "' — restoring default soundMode:", defaultProfile ? defaultProfile.soundMode : "null", "| input:", defaultProfile ? defaultProfile.input : "null");
           saveActiveProfileName(null);
           if (defaultProfile && devicePoweredOn) {
             _defaultInitialized = true;
@@ -1158,8 +1153,6 @@
       if (onError) onError(new Error("No transport available"));
       return;
     }
-
-    console.log("[sendProfileCommands] sending (gen:" + gen + ") — soundMode:", profile.soundMode, "| input:", profile.input, "| volume:", profile.volume, "| bass:", profile.bass, "| treble:", profile.treble);
 
     var mode = profile.soundMode || "manual";
 
@@ -1247,7 +1240,6 @@
     var t = getActiveTransport();
     if (!t || !t.send) return;
 
-    console.log("[applyProfile] '" + profile.name + "' — soundMode:", profile.soundMode, "| input:", profile.input, "| default soundMode:", defaultProfile ? defaultProfile.soundMode : "null");
     _defaultInitialized = true;
     applyingProfile = true;
     saveActiveProfileName(profile.name);
