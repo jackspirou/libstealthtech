@@ -905,6 +905,15 @@ main {
     transition: color var(--transition), border-color var(--transition);
 }
 
+.profile-btn-wrap:hover .btn-option:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.profile-btn-wrap:hover .profile-menu-btn:not(:disabled) {
+    border-color: var(--accent);
+}
+
 .profile-btn-wrap .btn-option.active + .profile-menu-btn {
     background: var(--accent);
     border-color: var(--accent);
@@ -913,7 +922,6 @@ main {
 
 .profile-menu-btn:hover {
     color: var(--text-secondary);
-    border-color: var(--text-muted);
 }
 
 .profile-popover {
