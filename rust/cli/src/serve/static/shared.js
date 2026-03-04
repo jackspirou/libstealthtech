@@ -38,7 +38,7 @@
   var srvConnectionControls = $("#server-connection-controls");
   var subRow = $("#subwoofer-row");
   var subStatus = $("#subwoofer-status");
-  var mediaCard = $("#media-card");
+  var mediaControls = $("#media-controls");
   var connectionSummary = $("#connection-summary");
 
   // Profile elements
@@ -593,10 +593,10 @@
       }
     }
 
-    // Media card visibility — show only when input is Bluetooth
-    if (mediaCard) {
+    // Media controls visibility — show only when input is Bluetooth
+    if (mediaControls) {
       var currentInput = state.input ? inputNormalize[state.input] || state.input : null;
-      mediaCard.style.display = currentInput === "Bluetooth" ? "" : "none";
+      mediaControls.style.display = currentInput === "Bluetooth" ? "" : "none";
     }
 
     // Firmware info
@@ -1485,7 +1485,7 @@
   // ---------- Card Drag-and-Drop ----------
 
   var ORDER_KEY = "stealthtech-card-order";
-  var DEFAULT_ORDER = ["connection", "system", "profiles", "input", "media", "mode", "volume", "eq", "shape", "log"];
+  var DEFAULT_ORDER = ["connection", "system", "profiles", "input", "mode", "volume", "eq", "shape", "log"];
 
   function loadOrder() {
     try {
