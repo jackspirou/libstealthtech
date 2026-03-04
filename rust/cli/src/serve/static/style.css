@@ -606,25 +606,11 @@ main {
     padding: 0 12px;
 }
 
-.divider-label {
-    display: flex;
-    align-items: center;
+.saved-label {
     color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 500;
     margin: 12px 0 6px;
-}
-
-.divider-label::before,
-.divider-label::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-}
-
-.divider-label span {
-    padding: 0 12px;
 }
 
 .saved-device-actions {
