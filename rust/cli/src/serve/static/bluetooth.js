@@ -309,9 +309,24 @@ async function connect() {
 }
 
 async function reconnect() {
+    // Try to recover bleDevice via getDevices() if we only have localStorage
     if (!bleDevice || !bleDevice.gatt) {
-        // localStorage-only case: open the native device picker
-        return connect();
+        if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+            try {
+                const devices = await navigator.bluetooth.getDevices();
+                const prev = devices.find((d) => d.name && /stealthtech|lovesac|sound.*charge|hk_lovesac|ee4034/i.test(d.name));
+                if (prev) {
+                    bleDevice = prev;
+                    bleDevice.addEventListener("gattserverdisconnected", onDisconnect);
+                }
+            } catch (e) {
+                // getDevices() unavailable — fall through
+            }
+        }
+        if (!bleDevice || !bleDevice.gatt) {
+            // No way to reconnect directly — open the device picker
+            return connect();
+        }
     }
 
     try {
