@@ -260,6 +260,7 @@
             var state = await apiPost("/api/disconnect", {});
             connected = false;
             ST.updateUI(state);
+            showReconnectOption();
             ST.addLogEntry("Disconnected from device");
         } catch (e) {
             ST.showError("Disconnect failed: " + e.message);

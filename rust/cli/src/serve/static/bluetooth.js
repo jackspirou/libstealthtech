@@ -368,16 +368,22 @@ function onDisconnect() {
     charCache = {};
 
     ST.updateUI({ connected: false });
+    var saved = getLastBtDevice();
+    if (saved) showSavedDevice(saved);
     ST.addLogEntry("Device disconnected");
 }
 
 async function disconnect() {
     if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
+        // onDisconnect handler will fire via gattserverdisconnected event
+        return;
     }
     bleConnected = false;
     charCache = {};
     ST.updateUI({ connected: false });
+    var saved = getLastBtDevice();
+    if (saved) showSavedDevice(saved);
     ST.addLogEntry("Disconnected from device");
 }
 
