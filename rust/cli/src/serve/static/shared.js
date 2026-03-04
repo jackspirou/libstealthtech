@@ -545,6 +545,11 @@
 
     updateSaveRowVisibility();
 
+    // Capture default profile: on first connect (always) or when no named profile is active
+    if (!applyingProfile && (!defaultProfile || !activeProfileName)) {
+      defaultProfile = buildProfileFromSliders();
+    }
+
     // Config shape buttons
     if (state.config_shape != null) {
       var normalizedShape = shapeNormalize[state.config_shape] || state.config_shape;
@@ -897,6 +902,7 @@
   var ACTIVE_PROFILE_KEY = "stealthtech-active-profile";
   var activeProfileName = null;
   var applyingProfile = false;
+  var defaultProfile = null;
 
   function saveActiveProfileName(name) {
     activeProfileName = name;
@@ -912,7 +918,11 @@
   var _autoSaveToastTimer = null;
 
   function autoUpdateActiveProfile() {
-    if (!activeProfileName || applyingProfile) return;
+    if (applyingProfile) return;
+    if (!activeProfileName) {
+      defaultProfile = buildProfileFromSliders();
+      return;
+    }
     var profiles = loadProfiles();
     for (var i = 0; i < profiles.length; i++) {
       if (profiles[i].name === activeProfileName) {
@@ -1062,7 +1072,18 @@
       btn.addEventListener("click", function () {
         if (activeProfileName === p.name) {
           saveActiveProfileName(null);
-          renderProfiles();
+          if (defaultProfile && devicePoweredOn) {
+            applyingProfile = true;
+            renderProfiles();
+            sendProfileCommands(defaultProfile, function () {
+              applyingProfile = false;
+            }, function (e) {
+              applyingProfile = false;
+              showError("Failed to restore defaults: " + e.message);
+            });
+          } else {
+            renderProfiles();
+          }
           return;
         }
         applyProfile(p);
@@ -1104,16 +1125,10 @@
     };
   }
 
-  function applyProfile(profile) {
-    if (!devicePoweredOn) return;
+  function sendProfileCommands(profile, onSuccess, onError) {
     var t = getActiveTransport();
     if (!t || !t.send) return;
 
-    applyingProfile = true;
-    saveActiveProfileName(profile.name);
-    renderProfiles();
-
-    // Build command chain: input, mode, volume, then EQ values
     var chain = Promise.resolve();
 
     if (profile.input) {
@@ -1150,7 +1165,6 @@
         return t.send("rear-volume", profile.rearVolume);
       })
       .then(function () {
-        // Update UI to reflect profile values
         if (profile.volume != null) setSlider("volume", profile.volume);
         setSlider("bass", profile.bass);
         setSlider("treble", profile.treble);
@@ -1158,27 +1172,41 @@
         setSlider("center-volume", profile.centerVolume);
         setSlider("rear-volume", profile.rearVolume);
 
-        // Update mode buttons
         $$(".btn-option[data-mode]").forEach(function (b) {
           b.classList.toggle("active", b.dataset.mode === mode);
         });
 
-        // Update input buttons
         if (profile.input) {
           $$("[data-input]").forEach(function (b) {
             b.classList.toggle("active", b.dataset.input === profile.input);
           });
         }
 
-        applyingProfile = false;
-        trackSuccess();
+        if (onSuccess) onSuccess();
       })
       .catch(function (e) {
-        applyingProfile = false;
-        saveActiveProfileName(null);
-        renderProfiles();
-        showError("Failed to apply profile: " + e.message);
+        if (onError) onError(e);
       });
+  }
+
+  function applyProfile(profile) {
+    if (!devicePoweredOn) return;
+    var t = getActiveTransport();
+    if (!t || !t.send) return;
+
+    applyingProfile = true;
+    saveActiveProfileName(profile.name);
+    renderProfiles();
+
+    sendProfileCommands(profile, function () {
+      applyingProfile = false;
+      trackSuccess();
+    }, function (e) {
+      applyingProfile = false;
+      saveActiveProfileName(null);
+      renderProfiles();
+      showError("Failed to apply profile: " + e.message);
+    });
   }
 
   function deleteProfile(name) {
