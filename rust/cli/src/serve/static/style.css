@@ -613,9 +613,11 @@ main {
 
 .saved-label {
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
-    margin: 0 0 6px;
+    height: 0;
+    overflow: visible;
+    transform: translateY(-1.1em);
 }
 
 .saved-device-actions {
