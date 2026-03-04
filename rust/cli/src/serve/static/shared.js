@@ -894,12 +894,19 @@
   // ---------- Custom Profiles ----------
 
   var PROFILES_KEY = "stealthtech-profiles";
+  var ACTIVE_PROFILE_KEY = "stealthtech-active-profile";
   var activeProfileName = null;
   var applyingProfile = false;
 
+  function saveActiveProfileName(name) {
+    activeProfileName = name;
+    if (name) localStorage.setItem(ACTIVE_PROFILE_KEY, name);
+    else localStorage.removeItem(ACTIVE_PROFILE_KEY);
+  }
+
   function updateSaveRowVisibility() {
     if (!newProfileBtn) return;
-    newProfileBtn.style.display = activeProfileName ? "none" : "";
+    newProfileBtn.style.display = "";
   }
 
   var _autoSaveToastTimer = null;
@@ -1014,9 +1021,10 @@
         return;
       }
       var profiles = loadProfiles();
+      var newNameLower = newName.toLowerCase();
       for (var i = 0; i < profiles.length; i++) {
-        if (profiles[i].name === newName) {
-          showError('A profile named "' + newName + '" already exists');
+        if (profiles[i].name.toLowerCase() === newNameLower && profiles[i].name !== oldName) {
+          showError('A profile named "' + profiles[i].name + '" already exists');
           return;
         }
       }
@@ -1027,7 +1035,7 @@
         }
       }
       saveProfilesToStorage(profiles);
-      if (activeProfileName === oldName) activeProfileName = newName;
+      if (activeProfileName === oldName) saveActiveProfileName(newName);
       renderProfiles();
       m.close();
     });
@@ -1053,7 +1061,7 @@
       btn.disabled = !devicePoweredOn;
       btn.addEventListener("click", function () {
         if (activeProfileName === p.name) {
-          activeProfileName = null;
+          saveActiveProfileName(null);
           renderProfiles();
           return;
         }
@@ -1102,7 +1110,7 @@
     if (!t || !t.send) return;
 
     applyingProfile = true;
-    activeProfileName = profile.name;
+    saveActiveProfileName(profile.name);
     renderProfiles();
 
     // Build command chain: input, mode, volume, then EQ values
@@ -1167,7 +1175,7 @@
       })
       .catch(function (e) {
         applyingProfile = false;
-        activeProfileName = null;
+        saveActiveProfileName(null);
         renderProfiles();
         showError("Failed to apply profile: " + e.message);
       });
@@ -1179,7 +1187,7 @@
         return p.name !== name;
       });
       saveProfilesToStorage(profiles);
-      if (activeProfileName === name) activeProfileName = null;
+      if (activeProfileName === name) saveActiveProfileName(null);
       renderProfiles();
     });
   }
@@ -1262,26 +1270,33 @@
           return;
         }
         var profiles = loadProfiles();
-        var eq = buildProfileFromSliders();
-        eq.name = name;
-        var idx = -1;
+        var nameLower = name.toLowerCase();
         for (var i = 0; i < profiles.length; i++) {
-          if (profiles[i].name === name) {
-            idx = i;
-            break;
+          if (profiles[i].name.toLowerCase() === nameLower) {
+            showError('A profile named "' + profiles[i].name + '" already exists');
+            return;
           }
         }
-        if (idx >= 0) {
-          profiles[idx] = eq;
-        } else {
-          profiles.push(eq);
-        }
+        var eq = buildProfileFromSliders();
+        eq.name = name;
+        profiles.push(eq);
         saveProfilesToStorage(profiles);
-        activeProfileName = name;
+        saveActiveProfileName(name);
         renderProfiles();
         m.close();
       });
     });
+  }
+
+  // Restore active profile from localStorage
+  var savedActive = localStorage.getItem(ACTIVE_PROFILE_KEY);
+  if (savedActive) {
+    var profiles = loadProfiles();
+    if (profiles.some(function (p) { return p.name === savedActive; })) {
+      activeProfileName = savedActive;
+    } else {
+      localStorage.removeItem(ACTIVE_PROFILE_KEY);
+    }
   }
 
   renderProfiles();
@@ -1779,7 +1794,7 @@
     },
     clearProfiles: function () {
       localStorage.removeItem(PROFILES_KEY);
-      activeProfileName = null;
+      saveActiveProfileName(null);
       renderProfiles();
       updateSaveRowVisibility();
     },
