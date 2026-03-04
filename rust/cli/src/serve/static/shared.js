@@ -1439,6 +1439,11 @@
       state["log"] = true;
     }
 
+    // Default profiles card based on whether any profiles exist
+    if (!state.hasOwnProperty("profiles")) {
+      state["profiles"] = loadProfiles().length === 0;
+    }
+
     $$("[data-card-id]").forEach(function (card) {
       var id = card.dataset.cardId;
       if (state[id]) {
