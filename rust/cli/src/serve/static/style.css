@@ -1181,6 +1181,21 @@ input[type="range"]::-moz-range-track {
     margin-bottom: 0;
 }
 
+.card-summary {
+    display: none;
+}
+
+.card.collapsed .card-summary {
+    display: inline;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .chevron {
     display: inline-block;
     width: 8px;

@@ -39,6 +39,7 @@
   var subRow = $("#subwoofer-row");
   var subStatus = $("#subwoofer-status");
   var mediaCard = $("#media-card");
+  var connectionSummary = $("#connection-summary");
 
   // Profile elements
   var profileButtonsContainer = $("#profile-buttons");
@@ -477,9 +478,11 @@
 
         // Set device name in the connected panel
         if (connDeviceName) connDeviceName.textContent = state.name || "StealthTech Device";
+        if (connectionSummary) connectionSummary.textContent = state.name || "Connected";
       } else {
         statusDot.className = "status-dot";
         statusText.textContent = "Disconnected";
+        if (connectionSummary) connectionSummary.textContent = "Disconnected";
         setControlsEnabled(false);
         devicePoweredOn = false;
         document.title = "StealthTech Remote";
