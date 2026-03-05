@@ -920,8 +920,15 @@
     }
   }
 
+  function tipDismissCount() {
+    var dismissed = parseInt(localStorage.getItem(TIP_DISMISSED_KEY) || "0", 10);
+    if (dismissed === 0) return 0;
+    return Math.floor((getTipCount() - FIRST_SHOW) / RESHOW_GAP) + 1;
+  }
+
   function showTip() {
     if (tipTooltip) tipTooltip.classList.add("visible");
+    trackEvent("tip_shown", { action_count: getTipCount(), times_dismissed: tipDismissCount() });
   }
 
   function hideTip() {
@@ -931,6 +938,7 @@
   if (tipClose) {
     tipClose.addEventListener("click", function (e) {
       e.preventDefault();
+      trackEvent("tip_dismissed", { action_count: getTipCount(), times_dismissed: tipDismissCount() + 1 });
       localStorage.setItem(TIP_DISMISSED_KEY, getTipCount());
       hideTip();
     });
@@ -940,7 +948,7 @@
     kofiLink.addEventListener("click", function () {
       localStorage.setItem(TIP_CLICKED_KEY, "1");
       hideTip();
-      trackEvent("kofi_click");
+      trackEvent("kofi_click", { action_count: getTipCount(), times_dismissed: tipDismissCount() });
     });
   }
 
