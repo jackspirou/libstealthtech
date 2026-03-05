@@ -111,10 +111,23 @@
     themeToggle.addEventListener("click", function () {
       currentThemeIndex = (currentThemeIndex + 1) % themes.length;
       applyTheme();
+      trackEvent("theme_change", { theme: themes[currentThemeIndex] });
     });
   }
 
   initTheme();
+
+  // ---------- Analytics helper ----------
+
+  function trackEvent(name, params) {
+    if (typeof gtag === "function") gtag("event", name, params);
+  }
+
+  var docsLink = document.querySelector(".docs-link");
+  if (docsLink) docsLink.addEventListener("click", function () { trackEvent("docs_click"); });
+
+  var githubLink = document.querySelector(".github-link");
+  if (githubLink) githubLink.addEventListener("click", function () { trackEvent("github_click"); });
 
   // ---------- Toast notifications ----------
 
@@ -247,6 +260,7 @@
     logContainer.innerHTML =
       '<div class="log-empty" id="log-empty">No notifications yet. Connect to a device to begin.</div>';
     logEmpty = logContainer.querySelector("#log-empty");
+    trackEvent("log_clear");
   });
 
   // ---------- Transport abstraction ----------
@@ -318,6 +332,7 @@
   modeTabs.forEach(function (tab) {
     tab.addEventListener("click", function () {
       switchMode(tab.dataset.mode);
+      trackEvent("transport_switch", { mode: tab.dataset.mode });
     });
   });
 
@@ -488,10 +503,12 @@
         // Set device name in the connected panel
         if (connDeviceName) connDeviceName.textContent = state.name || "StealthTech Device";
         if (connectionSummary) connectionSummary.innerHTML = '<span class="card-summary-dot connected"></span>' + escapeHtml(state.name || "Connected");
+        trackEvent("device_connected", { device_name: state.name, transport: ST.activeMode() });
       } else {
         statusDot.className = "status-dot";
         statusText.textContent = "Disconnected";
         if (connectionSummary) connectionSummary.innerHTML = '<span class="card-summary-dot"></span>Disconnected';
+        trackEvent("device_disconnected");
         setControlsEnabled(false);
         devicePoweredOn = false;
         _defaultInitialized = false;
@@ -688,6 +705,7 @@
           if (state) updateUI(state);
           autoUpdateActiveProfile();
           trackSuccess();
+          trackEvent("slider_change", { slider: key, value: value });
         })
         .catch(function (e) {
           slider._pending = false;
@@ -720,6 +738,7 @@
         .then(function (state) {
           if (state) updateUI(state);
           trackSuccess();
+          trackEvent("toggle", { control: key, state: newValue });
         })
         .catch(function (e) {
           toggle.el.classList.toggle("active", currentValue);
@@ -751,6 +770,7 @@
           if (state) updateUI(state);
           autoUpdateActiveProfile();
           trackSuccess();
+          trackEvent("input_select", { input: input });
         })
         .catch(function (e) {
           $$("[data-input]").forEach(function (b) {
@@ -787,6 +807,7 @@
           if (state) updateUI(state);
           autoUpdateActiveProfile();
           trackSuccess();
+          trackEvent("mode_select", { mode: mode });
         })
         .catch(function (e) {
           $$(".btn-option[data-mode]").forEach(function (b) {
@@ -820,6 +841,7 @@
         .then(function (state) {
           if (state) updateUI(state);
           trackSuccess();
+          trackEvent("shape_select", { shape: shape });
         })
         .catch(function (e) {
           $$("[data-shape]").forEach(function (b) {
@@ -850,6 +872,7 @@
       t.send(cfg.action, cfg.value)
         .then(function () {
           trackSuccess();
+          trackEvent("media_control", { action: cfg.action });
         })
         .catch(function (e) {
           showError(cfg.label + " failed: " + e.message);
@@ -862,6 +885,7 @@
   var deviceDisconnectBtn = $("#device-disconnect-btn");
   if (deviceDisconnectBtn) {
     deviceDisconnectBtn.addEventListener("click", function () {
+      trackEvent("disconnect_click");
       var t = getActiveTransport();
       if (t && t.disconnect) t.disconnect();
     });
@@ -916,6 +940,7 @@
     kofiLink.addEventListener("click", function () {
       localStorage.setItem(TIP_CLICKED_KEY, "1");
       hideTip();
+      trackEvent("kofi_click");
     });
   }
 
@@ -1112,6 +1137,7 @@
           return;
         }
         applyProfile(p);
+        trackEvent("profile_apply", { name: p.name });
       });
 
       if (activeProfileName === p.name) {
@@ -1273,6 +1299,7 @@
       saveProfilesToStorage(profiles);
       if (activeProfileName === name) saveActiveProfileName(null);
       renderProfiles();
+      trackEvent("profile_delete", { name: name });
     });
   }
 
@@ -1367,6 +1394,7 @@
         saveProfilesToStorage(profiles);
         saveActiveProfileName(name);
         renderProfiles();
+        trackEvent("profile_create", { name: name });
         m.close();
       });
     });
@@ -1468,7 +1496,9 @@
       if (e.target.closest("#new-profile-btn")) return;
       var card = header.closest("[data-card-id]");
       if (!card) return;
-      setCardCollapsed(card, !card.classList.contains("collapsed"), true);
+      var willCollapse = !card.classList.contains("collapsed");
+      setCardCollapsed(card, willCollapse, true);
+      trackEvent("card_toggle", { card: card.dataset.cardId, collapsed: willCollapse });
     });
 
     $("main").addEventListener("keydown", function (e) {
@@ -1718,7 +1748,10 @@
 
   var resetBtn = $("#reset-layout-btn");
   if (resetBtn) {
-    resetBtn.addEventListener("click", resetLayout);
+    resetBtn.addEventListener("click", function () {
+      resetLayout();
+      trackEvent("layout_reset");
+    });
   }
 
   // ---------- Settings Modal ----------
@@ -1804,7 +1837,10 @@
 
   var settingsBtn = $("#settings-btn");
   if (settingsBtn) {
-    settingsBtn.addEventListener("click", showSettings);
+    settingsBtn.addEventListener("click", function () {
+      showSettings();
+      trackEvent("settings_open");
+    });
   }
 
   // ---------- Saved device row helper ----------
