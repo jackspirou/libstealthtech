@@ -191,6 +191,9 @@
         try {
             var devices = await apiGet("/api/devices");
 
+            // If we connected while scanning (e.g. via WS), don't overwrite connected UI
+            if (connected) return;
+
             // Restore controls and show results
             if (serverConnectingIndicator) serverConnectingIndicator.style.display = "none";
             if (serverConnectionControls) serverConnectionControls.style.display = "";
@@ -248,7 +251,6 @@
                     firmware: state.firmware ? ST.buildFirmwareString(state.firmware) : null,
                     subwoofer: state.subwoofer_connected != null ? state.subwoofer_connected : null,
                 }));
-                showReconnectOption();
             }
             ST.addLogEntry("Connected to " + (state.name || address));
         } catch (e) {
@@ -289,8 +291,12 @@
             try {
                 var data = JSON.parse(event.data);
                 if (data.state && ST.isActiveTransport("server")) {
+                    var wasConnected = connected;
                     connected = data.state.connected != null ? !!data.state.connected : connected;
                     ST.updateUI(data.state);
+                    if (wasConnected && !connected) {
+                        showReconnectOption();
+                    }
                 }
                 ST.addLogEntry(data.decoded || event.data);
             } catch (e) {

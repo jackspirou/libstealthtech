@@ -361,9 +361,6 @@ function onConnected() {
     existing.name = bleDevice.name || "";
     localStorage.setItem(BT_DEVICE_KEY, JSON.stringify(existing));
 
-    // Prepare saved device row for next disconnect
-    showSavedDevice(existing);
-
     if (ST.isActiveTransport("bluetooth")) {
         ST.updateUI({ connected: true, name: bleDevice.name || null });
     }
