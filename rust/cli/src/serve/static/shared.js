@@ -503,7 +503,7 @@
         // Set device name in the connected panel
         if (connDeviceName) connDeviceName.textContent = state.name || "StealthTech Device";
         if (connectionSummary) connectionSummary.innerHTML = '<span class="card-summary-dot connected"></span>' + escapeHtml(state.name || "Connected");
-        trackEvent("device_connected", { device_name: state.name, transport: ST.activeMode() });
+        trackEvent("device_connected", { device_name: state.name, transport: activeMode });
       } else {
         statusDot.className = "status-dot";
         statusText.textContent = "Disconnected";
