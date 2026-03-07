@@ -274,6 +274,8 @@ function setCardDisconnected() {
     if (connectionPanel) connectionPanel.dataset.state = "disconnected";
     if (connectingIndicator) connectingIndicator.style.display = "none";
     if (connectionControls) connectionControls.style.display = "";
+    var cd = document.querySelector("#connected-device");
+    if (cd) cd.style.display = "none";
 }
 
 // ---------- Connect ----------

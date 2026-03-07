@@ -317,6 +317,9 @@
       var oldTransport = transports[oldMode];
       if (oldTransport && oldTransport.isConnected && oldTransport.isConnected()) {
         await oldTransport.disconnect();
+        // The transport's disconnect may skip updateUI due to isActiveTransport
+        // guard (activeMode already changed). Ensure shared UI reflects disconnect.
+        updateUI({ connected: false });
       }
 
       // Initialize new transport (awaited so _switching guard holds until ready)
